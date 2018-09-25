@@ -1,0 +1,516 @@
+<?php
+// ------------------------------------------------------------------------------------------------------------
+// Plesk Sync for WHMCS :: plesksync.php
+// ------------------------------------------------------------------------------------------------------------
+//  
+// ------------------------------------------------------------------------------------------------------------
+
+set_include_path( get_include_path() . PATH_SEPARATOR . $_SERVER['DOCUMENT_ROOT'] );
+include ("plesksync.class.php");  // include the ApiRequestException extension class
+include ("config.php");                    // plesksync config
+
+$strIp = (isset($_POST['ip']) ? $_POST['ip'] : $_GET['ip']);
+
+// --------------------
+function bytesToSize1024($bytes = 0, $precision = 2) {
+	
+	$unit = array('B','KB','MB','GB','TB','PB','EB');
+	return @round($bytes / pow(1024, ($i = floor(log($bytes, 1024)))), $precision).' '.$unit[$i];
+}
+// --------------------
+function getViewDomainsButton($ip, $login, $password, $secure, $button_text = 'Browse Accounts', $page = 0) {
+	
+	        $strHtml  = '<form action="'.$modulelink.'" method="post">';	      
+	        $strHtml .= '<input name="login_name" value="'.$login.'" type="hidden"><input name="passwd" value="'.urldecode($password).'" type="hidden">';
+	        $strHtml .= '<input name="ip" value="'.$ip.'" type="hidden"><input name="secure" value="'.$secure.'" type="hidden"><input name="page" value="' . $page . '" type="hidden">';
+	        $strHtml .= '<input value="' . $button_text . '" type="submit"></form>';
+		
+		return $strHtml;
+}
+// --------------------
+function showHeaderTitleVersion() {	
+	echo '<img src="../modules/admin/plesksync/images/plesksync-icon.png" align="absmiddle"> <strong>Plesk Sync for WHMCS - v1.0.1 Beta (Sept-23-2010)</strong><br /><br />';
+}
+// --------------------
+function showNavigationButtons($page_number, $ip, $login, $password, $secure) {	
+			
+	echo '<table border="0" align="center" width="40%"><tr>';
+	if ($page_number != 0) echo '<td align="center">' . getViewDomainsButton($ip, $login, $password, $secure, '&laquo; Previous Page (' . $page_number . ')', ($page_number - 1) ) . '</td>';
+	echo '<td align="center" style="color:black;font-weight:bold">[ Page (' . ($page_number + 1) . ') ]</td>';
+	echo '<td align="center">' . getViewDomainsButton($ip, $login, $password, $secure, 'Next Page (' . ($page_number + 2) . ') &raquo;', ($page_number + 1) )  . '</td>';				
+	echo '</table><br />';
+		
+}
+// --------------------
+function showFooter() {	
+	echo '<br /><center><hr width="80%" style="color:grey" /><div style="padding-bottom:25px;color:grey">Plesk Sync</a></div></center>';
+}
+// --------------------
+
+
+if (empty($_POST)) {
+// }}---------------------[MAIN() Default Page - Show active Plesk Servers]---------------------------------------------------------
+
+// javascript code to launch the ajax code
+?>
+<script type="text/javascript">
+
+function getServerStats(outputtag, data) {
+	
+        $('#' + outputtag).html("<img src='../modules/admin/plesksync/images/wait_details.gif'>");
+                
+	$.ajax({
+		method: 'get',
+		url: '../modules/admin/plesksync/ajax/ajaxGetServerStats.php',
+		data: data,
+		dataType: 'text',
+		success: function (response) {
+			$('#' + outputtag).html(response);
+		}
+	});		
+}
+
+</script>
+<?
+
+    showHeaderTitleVersion();
+        
+    echo 'Written by: Shawn Reimerdes (<a href="http://webnames.com.br">WebNames.com.br</a>) - <i><a href="mailto:shawnreimerdes@users.sourceforge.net">shawnreimerdes@users.sourceforge.net</a></i><br />';
+    echo 'Homepage: <a href="http://plesksyncwhmcs.sourceforge.net/">http://plesksyncwhmcs.sourceforge.net</a><br />';
+    echo 'Download: <a href="http://sourceforge.net/projects/plesksyncwhmcs/files/">check for updates</a><br /><br />';
+
+    echo 'Plesk Sync is an addon module for WHMCS to import, control, create and synchronize client hosting accounts with your Parallel Plesk servers. <br />';
+ 
+    echo '<div style="padding-left:25px;padding-top:3px">';
+    echo 'Browse a server to start paging through the client domain accounts existing in Plesk.<br />';
+    echo 'Accounts are color-coded, reports a diagnosis and resolution, contains statistics on<br />';
+    echo 'disk space and traffic, detailed client profile information and command buttons to resolve.<br /><br />';
+
+
+    echo '&bull; Find orphaned hosting accounts that are active in Plesk  <br /> ';      
+    echo '&bull; Synchronize hosting account status (suspended/active)<br />';
+    echo '&bull; Auto-locate owner of the hosting account through domain/e-mail<br />';
+    echo '&bull; Import, match and create accounts with invoices and e-mails<br />';
+    echo '&bull; You may NEED to run every couple of days to ensure synchronicity<br />';
+    echo '&bull; Supports Plesk v8.1+ for Linux/Unix & Windows</div><br />';
+    
+    echo "</div><br />";
+    echo "&rArr; Auto-detecting servers...";
+    
+    echo '<h2>Plesk Servers</h2>';
+    
+    //name 	ipaddress 	hostname 		maxaccounts 	type 	username 	password 	accesshash 	secure 	active 	groupid 	serverid 	id 	name 	filltype
+     $result = mysql_query("SELECT `tblservers`.name, `tblservers`.hostname, `tblservers`.ipaddress, `tblservers`.maxaccounts, `tblservers`.username, `tblservers`.password, `tblservers`.secure, `tblservergroups`.name AS `groupname` FROM `tblservers` LEFT JOIN `tblservergroupsrel` ON `tblservers`.id = `tblservergroupsrel`.serverid LEFT JOIN `tblservergroups` ON `tblservergroupsrel`.groupid = `tblservergroups`.id WHERE type = 'plesk' ");
+
+      echo '<div class="tablebg"><table class="datatable" border="0" cellpadding="3" cellspacing="1" width="100%">';
+      echo '<tbody><tr><th width="85">#</th><th>Server Name</th><th>Group</th><th width="95">Host (IP) </th><th width="100">Protocol</th><th width="220">Stats</th><th></th></tr>';
+
+        $i = 0;
+        
+	while($row = mysql_fetch_array($result)) {
+              
+              echo '<tr>';
+	      
+              echo '<td><img src="images/icons/products.png" align="absmiddle"> '.++$i.'.</td>';
+              echo '<td style="color:black;font-weight:bold">'.$row['name'].'</td>';
+              echo '<td align="center"><i>'.$row['groupname'].'</i></td>';
+              echo '<td>'.$row['ipaddress'].'</td>';
+
+	      
+	      echo '<td align="center">';
+	      
+			// connect to each server and get the list of available protocols that it understands
+			try {		
+				try {
+				       $curl = curlInit($row['ipaddress'], $row['username'], decrypt($row['password']), $row['secure']);
+				       $response = sendRequest($curl, createSupportedProtocolsDocument()->saveXML());
+				       $responseXml = parseResponse($response);
+				       
+				       $info = $responseXml->xpath('//proto[last()]');    // detect protocols available
+				       
+				      echo  $strServerProtocolVersion = (string)$info[0];
+				      
+				      if ($strServerProtocolVersion < "1.4.1.2") throw new ApiRequestException("");
+				      else echo '<span style="color:green;font-size:8pt"> &#10004;</span>';
+				       
+				
+			       } catch (ApiRequestException $e) {
+				      echo '<span style="color:red;font-size:7pt"> x</span></td><td style="color:red;"><i>Version not supported</i></td>';
+				      continue;
+			       }
+			} catch (Exception $e) {
+				      echo '<span style="color:red;font-size:7pt"> x</span></td><td style="color:red;"><i>' . $e . '</i></td>';
+				      continue;
+			}		       
+
+	      echo '</td>';
+
+	      echo '<td align="center"><div id="serverinfo_output' . $i . '"> <input type="button" value="Server Statistics"  id="serverinfobtn' .$i. '" style="color:orange" ';
+	      echo 'onClick="getServerStats(\'serverinfo_output'.$i. '\',\'ip='.$row['ipaddress'].'&l='.$row['username'].'&p='.urlencode(decrypt($row['password'])).'\')"></div></td>';     
+  
+  
+              echo '<td><form action="'.$modulelink.'" method="post">';	      
+	      echo '<input name="login_name" value="'.$row['username'].'" type="hidden"><input name="passwd" value="'.decrypt($row['password']).'" type="hidden">';
+	      echo '<input name="ip" value="'.$row['ipaddress'].'" type="hidden"><input name="secure" value="'.$row['secure'].'" type="hidden">';
+	      echo '<input value="Browse Accounts..." type="submit"></form>'; 
+              echo '</td>';
+	      
+    
+	      
+	      echo '</tr>';
+	      
+	}
+	echo '</tbody></table></div><br />';
+	
+	showFooter();
+	
+ // ------------------------------------------------------------------------------
+ 
+} else {
+	
+// ---------------------[MAIN() Process - Show domain accounts from selected server]---------------------------------------------------------	
+
+
+
+// javascript code to launch the ajax code which can unsuspend accounts in Plesk and import from Plesk => WHMCS		
+?>
+<script type="text/javascript">
+
+function ChangeAccountStatusPlesk(outputtag, data) {
+
+	
+        $('#' + outputtag).html("<img src='../modules/admin/plesksync/images/wait_details.gif'>");
+        
+        
+	$.ajax({
+		method: 'get',
+		url: '../modules/admin/plesksync/ajax/ajaxChangeStatusInPlesk.php',
+		data: data,
+		dataType: 'text',
+		success: function (response) {
+			$('#' + outputtag).html(response);
+		}
+	});	
+	
+}
+
+function GetAccountDetailsPlesk(outputtag, data) {
+
+	
+        $('#' + outputtag).html("<img src='../modules/admin/plesksync/images/wait_details.gif'>");
+        
+        
+	$.ajax({
+		method: 'get',
+		url: '../modules/admin/plesksync/ajax/ajaxGetPleskAccountDetails.php',
+		data: data,
+		dataType: 'text',
+		success: function (response) {
+			$('#' + outputtag).html(response);
+		}
+	});	
+	
+}
+
+function ImportPleskAccount(outputtag, data) {
+	
+        $('#' + outputtag).html("<img src='../modules/admin/plesksync/images/wait_import.gif'>");
+        
+        
+	$.ajax({
+		method: 'get',
+		url: '../modules/admin/plesksync/ajax/ajaxImportPleskAccount.php',
+		data: data,
+		dataType: 'text',
+		success: function (response) {
+			$('#' + outputtag).html(response);
+		}
+	});	
+	
+}
+
+function CreateWHMCSAccount(outputtag, data, first, last, company, email, phone, address1, city, state, postcode, country, login, password, sendemail) {
+	   
+            	var strFirst = $('#' + first).val();
+            	var strLast = $('#' + last).val();				
+            	var strCompany = $('#' + company).val();
+		var strEmail = $('#' + email).val();
+		var strPhone = $('#' + phone).val();
+            	var strAddress1 = $('#' + address1).val();
+            	var strCity = $('#' + city).val();
+            	var strState = $('#' + state).val();
+            	var strPostcode = $('#' + postcode).val();
+            	var strCountry = $('#' + country).val();
+            	var strLogin = $('#' + login).val();
+            	var strPassword = $('#' + password).val();
+		var bSendemail = $('#' + sendemail).attr('checked');
+         
+	         $('#' + outputtag).html("<img src='../modules/admin/plesksync/images/wait_import.gif'>");
+		 
+	$.ajax({
+		method: 'get',
+		url: '../modules/admin/plesksync/ajax/ajaxCreateWHMCSAccount.php',
+		data: data + "&first=" + strFirst + "&last=" + strLast + "&company=" + strCompany + "&email=" + strEmail + "&phone=" + strPhone + "&address1=" + strAddress1 + "&city=" + strCity + "&state=" + strState + "&postcode=" + strPostcode + "&country=" + strCountry + "&login=" + strLogin + "&password=" + strPassword + "&sendemail=" + bSendemail,
+		dataType: 'text',
+		success: function (response) {
+			$('#' + outputtag).html(response);
+		}
+	});	
+	
+}
+
+function CreateWHMCSOrder(outputtag, data, packageid, createinvoice, sendemail) {
+	   
+         	var strPackageid = $('#' + packageid).val();
+		var bSendemail = $('#' + sendemail).attr('checked');
+		var bCreateInvoice = $('#' + createinvoice).attr('checked');
+
+	         $('#' + outputtag).html("<img src='../modules/admin/plesksync/images/wait_import.gif'>");
+		 
+	$.ajax({
+		method: 'get',
+		url: '../modules/admin/plesksync/ajax/ajaxCreateWHMCSOrder.php',
+		data: data + "&packageid=" + strPackageid + "&sendemail=" + bSendemail + "&createinvoice=" +  bCreateInvoice,
+		dataType: 'text',
+		success: function (response) {
+			$('#' + outputtag).html(response);
+		}
+	});	
+	
+}
+
+</script>
+
+<?
+
+$curl = curlInit($strIp, $_POST['login_name'], $_POST['passwd'], $_POST['secure']);
+
+$iPageNumber = (isset($_POST['page']) ? $_POST['page'] : "0");
+$iMaxResultsPerPage = $max_id_results_per_page;  			// # config.php
+$iStartNumber = ($iPageNumber * $iMaxResultsPerPage) + 1;
+$iEndNumber = ($iPageNumber + 1) * $iMaxResultsPerPage;
+
+try {
+      showHeaderTitleVersion();
+
+      echo '<a href="">[ Home ] : Plesk Server Summary</a><br /><br />';
+
+      echo '<div style="color:grey">&rArr; Connected to Plesk RPC API at ' . $strIp . ':8443/enterprise/control/agent.php...</div><br />';
+     
+      echo '<img src="images/icons/products.png" align="absmiddle"> <span style="color:black;font-weight:bold;font-size:10pt">Plesk Server [' . $strIp . ']</span> <br /><br />';
+	   
+      if ($iPageNumber == 'all') {
+		echo "&rArr; Downloaded properties of all domains on server.<br />";
+		$response = sendRequest($curl, createAllDomainsDocument()->saveXML());
+      } else {
+		showNavigationButtons($iPageNumber, $strIp, $_POST['login_name'], $_POST['passwd'], $_POST['secure']);
+		
+		echo '<div align="center" style="color:black">Domain Accounts with id (<strong>' . $iStartNumber . ' - ' . $iEndNumber . '</strong>)</div>';
+
+		$response = sendRequest($curl, createSomeDomainsDocument($iStartNumber,$iEndNumber)->saveXML());
+      }
+           
+      $responseXml = parseResponse($response);
+   
+      checkResponse($responseXml);
+
+  
+} catch (ApiRequestException $e) {
+      echo $e; die();
+}
+
+
+// Explore the result
+
+ $iCnt = 0;
+ $iCountMissingFromWHMCS = 0;
+ $iCountSuspendedInPlesk = 0;
+
+
+	echo '<br /><table border="0" width="1250" cellpadding="1" cellspacing="1"><tr style="border: 1px solid grey;background-color: #f8f5da"><th style="font-size:8pt;">#.</th><th style="font-size:8pt;">ID</th><th style="font-size:8pt;">Domain Name</th>';
+        echo '<th style="font-size:8pt;" width="150">Client (Owner)</th><th style="font-size:8pt;" width="80">WHMCS Id</th>';
+        echo '<th style="font-size:8pt;" width="70">Created</th><th style="font-size:8pt;">Status</th><th style="font-size:8pt;" width="8">Link</th><th style="font-size:8pt;" width="170">Statistics</th><th style="font-size:8pt;" width="170">Diagnosis</th><th style="font-size:8pt;" width="150">Resolution</th></tr>';
+
+                                                
+
+foreach ($responseXml->xpath('/packet/domain/get/result') as $resultNode) {
+
+      if ( (string)$resultNode->status != "ok" ) continue;
+
+      $iClientId = (string)$resultNode->data->gen_info->client_id;
+      $iDomainId = (string)$resultNode->id;
+      $strDomainName = (string)$resultNode->data->gen_info->name;
+      $iDomainStatus = (string)$resultNode->data->gen_info->status;   /// INCORRECT!
+      $iAccountStatus = (string)$resultNode->data->gen_info->status;  // 0 = active, 2 = suspended (lack of payment?), 66 = suspended (over limit: disk/bandwidth)
+      $strSolutionText ="";
+         
+      if ($iDomainStatus  != "0") $iCountSuspendedInPlesk++;
+           
+      // get info from WHMCS
+      $result = mysql_query("SELECT `tblhosting`.`userid`, `tblhosting`.`id`,  `tblhosting`.`domainstatus`,`tblhosting`.`username`,`tblhosting`.`password`  from `tblhosting` WHERE `tblhosting`.`domain` = '".$strDomainName."' ORDER BY regdate  DESC LIMIT 1");
+      $row = mysql_fetch_array($result);
+      
+      if ($row) {
+                  $iWHMCSClientId = $row['userid'];
+                  $iWHMCSHostingId = $row['id'];
+                  $iWHMCSHostingStatus = $row['domainstatus'];
+                  $bFoundinWHCMS = TRUE;
+      } else {
+                  $iWHMCSClientId = '<span style="color:white;background-color:red;font-size:7pt;font-weight:bold">Not in WHMCS</span>';
+                  $bFoundinWHCMS = FALSE;
+                  $bhasWHMCSDomainAccount = FALSE;
+                  $iCountMissingFromWHMCS++;
+                  $strDomainNotes = "&raquo; NO hosting for this domain in WHMCS";
+		  $strSolutionText =  '<div id="createaccntOut' . $iCnt . '"> <input type="button" style="color:green;font-weight:bold" value="Verify & Import &raquo;"  onClick="ImportPleskAccount(\'createaccntOut'.$iCnt. '\',\'did=' . $iClientId  .  '&domain=' . $strDomainName . '&ip='.$strIp .'&l=' . $_POST['login_name'] .'&p='.urlencode($_POST['passwd']).'&secure='.$bSecure .'\')"></div>';
+
+		   
+                        // search for domain name match in WHMCS (Plesk API does not return full users stats unless you request a single domain)
+                        $resultDomain = mysql_query("SELECT *  from `tbldomains` WHERE `domain` = '".$strDomainName."' LIMIT 1");
+                        $rowDomain = mysql_fetch_array($resultDomain);
+			
+                        if ($rowDomain) {
+                                $iWHMCSDomainId = $rowDomain['id'];
+                                $iWHMCSClientId = $rowDomain['userid'];
+                                $iWHMCSDomainStatus = $rowDomain['status'];
+                                
+				$strDomainNotes .= '<br />&raquo; Found possible owner through domain:<br />&bull; <a href="clientssummary.php?userid='. $iWHMCSClientId . '">Client #' .  $iWHMCSClientId. '</a><br />&bull; <a href="clientshosting.php?userid=' .  $iWHMCSClientId  . '&hostingid=' . $iWHMCSHostingId . '">Domain #' . $iWHMCSDomainId . ' (' . $iWHMCSDomainStatus . ')</a>';
+                                
+				$strSolutionText = '<div id="addorderOut' . $iCnt . '">';
+				$strSolutionText .= '<strong>Choose Package:</strong> <select name="packageid" id="packageid' . $iCnt. '" style="font-size:7pt;color:black;">';
+				
+				// get list of packages
+				$resultProducts = mysql_query("SELECT name, id FROM `tblproducts` WHERE `servertype` = 'plesk' ORDER BY `name` ASC");			    						      
+				while($rowProducts = mysql_fetch_array($resultProducts))  $strSolutionText .= '<option value="' . $rowProducts['id'] . '">' . $rowProducts['name'] . '</option>';
+									      
+				$strSolutionText .= '</select><br /><br /><input type="checkbox" id="createinvoice' . $iCnt. '" name="createinvoice' . $iCnt. '" style="font-size:6pt;color:black;"><label for="createinvoice' . $iCnt. '">Generate invoice?</label><br />';   // checked="checked"
+				$strSolutionText .= '<br /><input type="checkbox" id="sendemail' . $iCnt. '" name="sendemail' . $iCnt. '" style="font-size:6pt;color:black;"><label for="sendemail' . $iCnt. '">Send Order confirmation e-mail?</label><br />';  
+					
+				$strSolutionText .= '<br /><center><input type="button" value="Attach Order to Client #'.$iWHMCSClientId.'"  id="addorderOut' . $iCnt. '" onClick="CreateWHMCSOrder(\'addorderOut'.$iCnt. '\',\'clientid=' . $iWHMCSClientId;
+				$strSolutionText .= '&domain=' . $strDomainName . '\',\'packageid'.$iCnt. '\',\'createinvoice'.$iCnt. '\',\'sendemail'.$iCnt. '\')"></center></div>';
+				
+				$bhasWHMCSDomainAccount = TRUE;
+                        }
+                    
+      }      
+
+      if (!$bFoundinWHCMS && !$bhasWHMCSDomainAccount) echo '<tr style="background-color: #fbb8b8;">';
+      else if (!$bFoundinWHCMS && $bhasWHMCSDomainAccount)  echo '<tr style="background-color: #FBEEEB;">';
+      else if ($iCnt % 2) echo '<tr style="background-color: #dee8f3">';
+      else echo "<tr>";
+      
+      echo '<td style="font-size:8pt;color:black;white-space: nowrap;">' . (++$iCnt + ($iStartNumber-1)). '.</td>';
+      
+      echo '<td style="font-size:8pt;color:#6a6d6e;white-space: nowrap;" align="center">' . $iDomainId . '</td>';
+      
+      if (!$bFoundinWHCMS)   echo '<td style="font-size:8pt;"><strong>' . $strDomainName . '</strong>';
+      else echo '<td style="font-size:8pt"><a href="/controle/admin/clientshosting.php?userid=' .  $iWHMCSClientId  . '&hostingid=' . $iWHMCSHostingId . '">' . $strDomainName . '</a>';
+      echo '</td>';
+         
+      echo '<td style="font-size:8pt;white-space: nowrap"><center>';
+      echo  'Plesk Id # '. $iClientId;
+      echo '</center><br />';
+       echo '<div id="userinfo_output' . $iCnt . '"><center><input type="button" value="Details"  id="userinfobtn' .$iCnt. '" onClick="GetAccountDetailsPlesk(\'userinfo_output'.$iCnt. '\',\'did=' . $iClientId  .  '&ip='.$strIp .'&l=' . $_POST['login_name'] . '&p='.urlencode($_POST['passwd']).'&secure='.$bSecure .'\')"></center></div></td>';
+
+      if (!$bFoundinWHCMS)        echo '<td style="font-size:8pt;white-space: nowrap;">' . $iWHMCSClientId . '</td>';   
+      else echo '<td style="font-size:8pt;white-space: nowrap;"><a href="/controle/admin/clientsdomains.php?id=' . $iWHMCSClientId . '" style="text-decoration: none;">' . $iWHMCSClientId . '</a></td>';
+  
+      echo '<td style="font-size:8pt;white-space: nowrap">' . (string)$resultNode->data->gen_info->cr_date . '</td>';
+ 
+      echo '<td style="font-size:8pt;white-space: nowrap" align="center">';
+     
+		switch ($iAccountStatus) {
+		   case "0": echo ' <span style="color:grey">active</span>';
+			   break;
+		   case "2": echo ' <span style="color:red">suspended</span>';
+			   break;	
+		   case "66": echo ' <span style="color:red">suspended<br/>[<strong>over limits!</strong>]</span>';
+			   break;
+		   case "256": echo ' <span style="color:red">suspended<br/>[not sure why!]</span>';
+			   break;	
+		   default: echo ' <span style="color:grey">'.$iAccountStatus.'</span>';
+			   break;	
+		}
+
+      echo '</td>';
+      
+     echo '<td style="font-size:8pt;">[<a href="http://www.'. $strDomainName . '" target="_blank">www</a>]</td>';
+       
+      echo '<td style="font-size:8pt;white-space: nowrap;">';
+     // if ((string)$resultNode->data->user->enabled == "false")  echo  '&bull; Enabled: <span style="color:red;font-weight:bold">NO</span> <br />';
+     
+      echo '&bull; Type: ';
+      		switch ($strHtype = (string)$resultNode->data->gen_info->htype) {
+		   case "vrt_hst": echo ' <span style="color:black">virtual host</span>';
+			   break;
+		   case "none": echo ' <span style="color:white;background-color:red;font-weight:bold">NONE</span>';
+			   break;		
+		   default: echo ' <span style="color:#0398ae">'.$iAccountStatus.'</span>';
+			   break;	
+		}      
+      echo ' <br />';
+      
+      echo '&bull; DNS: '. (string)$resultNode->data->gen_info->dns_ip_address . '<br />';
+      echo '&bull; Disk Space: ' . bytesToSize1024($resultNode->data->gen_info->real_size) . '<br />';    
+      echo '&bull; Traffic Today: ' . bytesToSize1024($resultNode->data->stat->traffic) . '<br />';
+      echo '&bull; Traffic Yesterday: ' . bytesToSize1024($resultNode->data->stat->traffic_prevday) . '<br />';
+      //echo '&bull; Active Domains: '. (string)$resultNode->data->stat->active_domains . '<br />';
+     // echo '&bull; Sub-Domains: '. (string)$resultNode->data->stat->subdomains . '<br />';      
+     // echo '&bull; Disk Space: ' . bytesToSize1024($resultNode->data->stat->disk_space) . '<br />';     
+      echo '</td>';
+      
+  
+      if (!$bFoundinWHCMS) {
+            
+	    echo '<td style="font-size:8pt;color:black;white-space: nowrap">'.$strDomainNotes.'</td>';
+	    echo '<td style="font-size:8pt;color:black;">' . $strSolutionText. '</td>';
+	    
+      } else if ($row['domainstatus'] == "Suspended" && $iDomainStatus == 0) {
+            
+	    echo '<td style="font-size:8pt;color:black;white-space: nowrap">&raquo; Suspended in WHMCS, <strong>Active in Plesk</strong>.</td>';
+            echo '<td><div id="pleskSuspendOut' . $iCnt . '"> <input type="button" value="Plesk: `Suspend`"  id="pleskSuspendBtn' .$iCnt. '" style="color:#5c2de1" onClick="ChangeAccountStatusPlesk(\'pleskSuspendOut'.$iCnt. '\',\'cid=' . $iClientId  . '&did=' . $iDomainId  . '&secure=' . $row['secure'] . '&suspend=1&ip='.$strIp.'&l=' . $_POST['login_name'] .'&p='.urlencode($_POST['passwd']).'\')"></div></td>';         
+      
+      } else if ($row['domainstatus'] == "Active" && $iDomainStatus <> 0) {
+            
+	    echo '<td style="font-size:8pt;color:black;white-space: nowrap">&raquo; Active in WHMCS, <strong>Suspended in Plesk</strong>.</td>'; 
+            echo '<td><div id="pleskUnsuspendOut' . $iCnt . '"> <input type="button" value="Plesk: `Unsuspend`"  id="pleskUnsuspendBtn' .$iCnt. '" style="color:#9f1fe1" onClick="ChangeAccountStatusPlesk(\'pleskUnsuspendOut'.$iCnt. '\',\'cid=' . $iClientId  . '&did=' . $iDomainId  . '&secure=' . $row['secure'] . '&suspend=0&ip='.$strIp.'&l=' . $_POST['login_name'] . '&p='.urlencode($_POST['passwd']).'\')"></div></td>';     
+      
+      } else echo '<td></td><td style="font-size:8pt;color:black;">' . $strSolutionText. '</td>';
+
+      echo "</tr>\n";
+      
+     						      
+     
+}
+
+	echo "</table>\n<br /><br />";
+ 
+		if ($iCnt == 0) echo '<div align="center" style="padding-top:50px;padding-bottom:90px;color:red;font-weight:bold">( Sorry, there are no client domains accounts within this range... )</div><br />';
+		else echo '<div style="color:black"><i>(<strong>' . $iCnt . '</strong> of <strong>' .  $iMaxResultsPerPage . '</strong>), client domain accounts found within this range.</i></div><br />';
+		
+		
+		showNavigationButtons($iPageNumber, $_POST['ip'], $_POST['login_name'], $_POST['passwd'], $_POST['secure']);	
+	 
+ /*
+ // collect some statistics  
+ echo '&rArr; <span style="color:black">Total Hosting Accounts in Plesk: <strong>' . $iCnt . '</strong></span><br />';
+ //echo '&rArr; <span style="color:black">Total Hosting Accounts in WHMCS: <strong>' .  '</strong></span><br />';
+ if ($iCountMissingFromWHMCS > 0) echo '<br /><br />&rArr; <span style="color:black">Total Hosting Accounts Missing from WHMCS: <span style="font-weight:bold;color:red">'.$iCountMissingFromWHMCS.'</span></span><br />';
+  
+		   $result_count = mysql_query("SELECT  COUNT(distinct `tblhosting`.id) AS `count` FROM `tblhosting` WHERE domainstatus = 'Suspended' AND server = 9");              
+                   $row_count = mysql_fetch_assoc($result_count);
+		   $iTotalSuspendedAccountsWHMCS = $row_count['count'];
+                   
+ //if ($iTotalSuspendedAccountsWHMCS != $iCountSuspendedInPlesk) echo "FIX THOSE";
+  
+ echo '&rArr; <span style="color:black">Total Hosting Accounts Suspended in Plesk: <strong>' . $iCountSuspendedInPlesk . '</strong></span><br />';
+ echo '&rArr; <span style="color:black">Total Hosting Accounts Suspended in WHMCS: <strong>' . $iTotalSuspendedAccountsWHMCS . '</strong></span><br /><br />';
+ */
+
+	ShowFooter();
+
+
+}
+
+
+
+?>
