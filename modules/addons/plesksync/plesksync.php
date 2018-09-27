@@ -82,7 +82,7 @@ function plesksync_output($vars){
   
   // javascript code to launch the ajax code which can unsuspend accounts in Plesk and import from Plesk => WHMCS		
   echo '<script>var moduledir = "' . $module_relpath . '";</script>'; //replace with $modulelink once we merge in ajaxresponders
-  echo '<script type="text/javascript" src="' . $module_relpath . '/scripts.js" />';
+  echo '<script type="text/javascript" src="' . $module_relpath . '/scripts.js"></script>';
 	
 	if (empty($_POST)) {
     
