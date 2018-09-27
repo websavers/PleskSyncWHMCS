@@ -100,7 +100,8 @@ function plesksync_output($vars){
       
       $i = 0;
       $servers = json_decode(json_encode($servers), true); //convert from obj to array
-  		foreach ($servers as $row){  			
+  		foreach ($servers as $row){
+        $error = false;		
         echo '<tr>';
         
           echo '<td><img src="images/icons/products.png" align="absmiddle"> '.++$i.'.</td>';
@@ -122,7 +123,7 @@ function plesksync_output($vars){
 			      
 			      if ($strServerProtocolVersion < "1.4.1.2"){
               echo '<span style="color:red;font-size:7pt"> x</span></td><td style="color:red;"><i>Version not supported</i></td>';
-              continue;
+              $error = true;
             }
 			      else{ 
               echo '<span style="color:green;font-size:8pt"> &#10004;</span>';  
@@ -131,19 +132,23 @@ function plesksync_output($vars){
   				} 
           catch (Exception $e) {
 			      echo '<span style="color:red;font-size:7pt"> x</span></td><td style="color:red;"><i>' . $e . '</i></td>';
-			      continue;
+            $error = true;
   				}		       
 
 		      echo '</td>';
 
-		      echo '<td align="center"><div id="serverinfo_output' . $i . '"> <input type="button" value="Server Statistics"  id="serverinfobtn' .$i. '" style="color:orange" ';
-		      echo 'onClick="getServerStats(\'serverinfo_output'.$i. '\',\'ip='.$row['ipaddress'].'&l='.$row['username'].'&p='.urlencode(decrypt($row['password'])).'\')"></div></td>';     
-          echo '<td><form action="'.$modulelink.'" method="post">';	      
-		      echo '<input name="login_name" value="'.$row['username'].'" type="hidden"><input name="passwd" value="'.decrypt($row['password']).'" type="hidden">';
-		      echo '<input name="ip" value="'.$row['ipaddress'].'" type="hidden"><input name="secure" value="'.$row['secure'].'" type="hidden">';
-		      echo '<input value="Browse Accounts..." type="submit"></form>'; 
-	        echo '</td>';
-
+          if ($error){
+            echo '<td>&nbsp;</td>';
+          }
+          else{
+  		      echo '<td align="center"><div id="serverinfo_output' . $i . '"> <input type="button" value="Server Statistics"  id="serverinfobtn' .$i. '" style="color:orange" ';
+  		      echo 'onClick="getServerStats(\'serverinfo_output'.$i. '\',\'ip='.$row['ipaddress'].'&l='.$row['username'].'&p='.urlencode(decrypt($row['password'])).'\')"></div></td>';     
+            echo '<td><form action="'.$modulelink.'" method="post">';	      
+  		      echo '<input name="login_name" value="'.$row['username'].'" type="hidden"><input name="passwd" value="'.decrypt($row['password']).'" type="hidden">';
+  		      echo '<input name="ip" value="'.$row['ipaddress'].'" type="hidden"><input name="secure" value="'.$row['secure'].'" type="hidden">';
+  		      echo '<input value="Browse Accounts..." type="submit"></form>'; 
+  	        echo '</td>';
+          }
         echo '</tr>'; 
   		}
   		echo '</tbody></table></div><br />';
