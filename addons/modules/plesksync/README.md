@@ -35,29 +35,31 @@ Features
    * Ensure synchronicity between WHMCS and Plesk  
    * Interactively Suspend or Unsuspend Plesk client accounts
    * Ajax buttons to carry-out operations rapidly
+   * Find orphaned hosting accounts that are active in Plesk  <br /> ';      
+   * Synchronize hosting account status (suspended/active)<br />';
+   * Auto-locate owner of the hosting account through domain/e-mail<br />';
+   * Import, match and create accounts with invoices and e-mails<br />';
    * Open Source, Freeware
 
 
 Homepage
 ------------
 
-   * http://plesksyncwhmcs.sourceforge.net
+   * Updated: https://github.com/websavers/PleskSyncWHMCS
+   * Original: http://plesksyncwhmcs.sourceforge.net
 
 Screen Shots
 ------------
 
    * https://sourceforge.net/project/screenshots.php?group_id=351738
 
-
-
 Download
 --------
 
-   * Get the latest version from SourceForge:
-   
-         + v1.0 Beta as of (Sept-12-2010): http://sourceforge.net/projects/plesksyncwhmcs/files/
-
-
+  * Get the latest development copy from GitHub:
+        + v2.0 Beta as of (Sep-27, 2018): https://github.com/websavers/PleskSyncWHMCS
+   * Get the original/unmaintaned version from SourceForge:
+        + v1.0 Beta as of (Sept-12-2010): http://sourceforge.net/projects/plesksyncwhmcs/files/
 
 
 Requirements
@@ -65,23 +67,15 @@ Requirements
 
    * WHMCS v7+ (tested with 7.6.1)
    * PHP7.1+ (with cURL and SimpleXML)
-   * Plesk v8.1+ for Linux/Unix & Windows (packet protocol > 1.4.1.0)
+   * Plesk v8.1+ for Linux/Unix & Windows [packet protocol > 1.4.1.0] (tested with Plesk 17.8)
 
 
 Installation
 ------------
 
-   1) Unzip archive.
-   
-   2) Edit config.php.  You will need to edit the following entries:
-   
-         $whmcs_api_url = 'http://yoursite.com/whmcs_default_directory/includes/api.php';
-         
-         $whmcs_addorder_payment = "paypal";                # payment gateway for new invoiced hosting 
-         $whmcs_addorder_billingcycle = "Monthly";          # invoice billing cycle for new invoice hosting
-             
-   3) Upload the entire PleskSyncWHMCS folder (including subdirectories) to your whmcs web server,
-      at this location: **/whmcs_default_directory/modules/addons/**
+   1) Unzip archive
+   2) Upload the entire plesksync folder (including subdirectories) to WHMCS's /modules/addons/ folder
+   3) Activate in WHMCS under Setup > Addons then configure on-screen.
 
 
 Usage Instructions
@@ -115,7 +109,7 @@ Reference
 
 [WHMCS](http://www.whmcs.com "WHMCS") is an all-in-one client management, billing & support solution for online businesses.
 
-[Parallels Plesk Panel](http://www.parallels.com/products/plesk/ "Parallel Plesk Panel") is the leading hosting automation control panel on the market. 
+[Plesk Panel](https://www.plesk.com "Plesk Control Panel") is the leading hosting automation control panel on the market. 
   
 Parallels Plesk Panel 9.2: API RPC Protocol Developer Guide:
 [http://download1.parallels.com/Plesk/PPP9/Doc/en-US/plesk-9.2-api-rpc/](http://download1.parallels.com/Plesk/PPP9/Doc/en-US/plesk-9.2-api-rpc/ "PLESK 9.2 RPC API")
@@ -135,19 +129,12 @@ Utilizes the following functions:
 - domain-get (plesksync.class.php)
 
 
-
 Release Log
 -----------
 
-   * v1.0.1 Beta (Sept.23.2010) - added newly created WhmcsApiClass (Whmcs.Api.class.php).  Added auto-detecting of API admin user, to avoid confusion in setup.
-   * v1.0 Beta (Sept.16.2010) - minor update: added better error exception handling.
-   * v1.0 Beta (Sept.12.2010) - first public release.
-
-
-
-
-
-
-
+   * v2.0b (Sept.27.2018) - complete refactoring of module code to work with WHMCS 7+
+   * v1.0.1b (Sept.23.2010) - added newly created WhmcsApiClass (Whmcs.Api.class.php).  Added auto-detecting of API admin user, to avoid confusion in setup.
+   * v1.0.0b (Sept.16.2010) - minor update: added better error exception handling.
+   * v1.0.0b (Sept.12.2010) - first public release.
 
 

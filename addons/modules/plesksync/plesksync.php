@@ -5,16 +5,16 @@
 //  
 // ------------------------------------------------------------------------------------------------------------
 
-use WHMCS\Database\Capsule;
-
 if (!defined("WHMCS")) {
     die("This file cannot be accessed directly");
 }
-
-set_include_path( get_include_path() . PATH_SEPARATOR . $_SERVER['DOCUMENT_ROOT'] );
 include ("plesksync.class.php");  // include the ApiRequestException extension class
 
-function plesksyncwhmcs_config()
+use WHMCS\Database\Capsule;
+
+set_include_path( get_include_path() . PATH_SEPARATOR . $_SERVER['DOCUMENT_ROOT'] );
+
+function plesksync_config()
 {
     return array(
         'name' => 'Plesk Sync for WHMCS', // Display name for your module
@@ -65,7 +65,7 @@ function plesksyncwhmcs_config()
     );
 }
 
-function plesksyncwhmcs_output($vars){
+function plesksync_output($vars){
 	
 	// Get module configuration parameters
 	$max_id_results_per_page 			= $vars['accounts_per_page'];
@@ -78,119 +78,106 @@ function plesksyncwhmcs_output($vars){
 	$strIp = (isset($_POST['ip']) ? $_POST['ip'] : $_GET['ip']);
 	
 	if (empty($_POST)) {
-	// }}---------------------[MAIN() Default Page - Show active Plesk Servers]---------------------------------------------------------
+    
+  	// }}---------------------[MAIN() Default Page - Show active Plesk Servers]---------------------------------------------------------
 
-	// javascript code to launch the ajax code
-	?>
-	<script type="text/javascript">
+  	// javascript code to launch the ajax code
+  	?>
+  	<script type="text/javascript">
 
-	function getServerStats(outputtag, data) {
-		
-	        $('#' + outputtag).html("<img src='../modules/admin/plesksync/images/wait_details.gif'>");
-	                
-		$.ajax({
-			method: 'get',
-			url: '../modules/admin/plesksync/ajax/ajaxGetServerStats.php',
-			data: data,
-			dataType: 'text',
-			success: function (response) {
-				$('#' + outputtag).html(response);
-			}
-		});		
-	}
+  	function getServerStats(outputtag, data) {
+  		
+  	        $('#' + outputtag).html("<img src='../modules/admin/plesksync/images/wait_details.gif'>");
+  	                
+  		$.ajax({
+  			method: 'get',
+  			url: '../modules/admin/plesksync/ajax/ajaxGetServerStats.php',
+  			data: data,
+  			dataType: 'text',
+  			success: function (response) {
+  				$('#' + outputtag).html(response);
+  			}
+  		});		
+  	}
 
-	</script>
-	<?php
+  	</script>
+  	<?php
 
-	    showHeaderTitleVersion();
-	        
-	    echo 'Written by: Shawn Reimerdes (<a href="http://webnames.com.br">WebNames.com.br</a>) - <i><a href="mailto:shawnreimerdes@users.sourceforge.net">shawnreimerdes@users.sourceforge.net</a></i><br />';
-	    echo 'Homepage: <a href="http://plesksyncwhmcs.sourceforge.net/">http://plesksyncwhmcs.sourceforge.net</a><br />';
-	    echo 'Download: <a href="http://sourceforge.net/projects/plesksyncwhmcs/files/">check for updates</a><br /><br />';
+  	    showHeaderTitleVersion();
 
-	    echo 'Plesk Sync is an addon module for WHMCS to import, control, create and synchronize client hosting accounts with your Parallel Plesk servers. <br />';
-	 
-	    echo '<div style="padding-left:25px;padding-top:3px">';
-	    echo 'Browse a server to start paging through the client domain accounts existing in Plesk.<br />';
-	    echo 'Accounts are color-coded, reports a diagnosis and resolution, contains statistics on<br />';
-	    echo 'disk space and traffic, detailed client profile information and command buttons to resolve.<br /><br />';
+  	    echo 'Plesk Sync is an addon module for WHMCS to import, control, create and synchronize client hosting accounts with your Parallel Plesk servers. <br />';
+  	 
+  	    echo '<div style="padding-left:25px;padding-top:3px">';
+  	    echo 'Accounts are color-coded, reports a diagnosis and resolution, contains statistics on disk space and traffic, detailed client profile information and command buttons to resolve.<br /><br />';
+  	    
+  	    echo "</div><br />";
+  	    echo "&rArr; Auto-detecting servers...";
+  	    
+  	    echo '<h2>Plesk Servers</h2>';
 
-
-	    echo '&bull; Find orphaned hosting accounts that are active in Plesk  <br /> ';      
-	    echo '&bull; Synchronize hosting account status (suspended/active)<br />';
-	    echo '&bull; Auto-locate owner of the hosting account through domain/e-mail<br />';
-	    echo '&bull; Import, match and create accounts with invoices and e-mails<br />';
-	    echo '&bull; You may NEED to run every couple of days to ensure synchronicity<br />';
-	    
-	    echo "</div><br />";
-	    echo "&rArr; Auto-detecting servers...";
-	    
-	    echo '<h2>Plesk Servers</h2>';
-
-      echo '<div class="tablebg"><table class="datatable" border="0" cellpadding="3" cellspacing="1" width="100%">';
-      echo '<tbody><tr><th width="85">#</th><th>Server Name</th><th>Group</th><th width="95">Host (IP) </th><th width="100">Protocol</th><th width="220">Stats</th><th></th></tr>';
-
+        echo '<div class="tablebg"><table class="datatable" border="0" cellpadding="3" cellspacing="1" width="100%">';
+        echo '<tbody><tr><th width="85">#</th><th>Server Name</th><th>Group</th><th width="95">Host (IP) </th><th width="100">Protocol</th><th width="220">Stats</th><th></th></tr>';
+      
+  		$servers = Capsule::select("SELECT `tblservers`.name, `tblservers`.hostname, `tblservers`.ipaddress, `tblservers`.maxaccounts, `tblservers`.username, `tblservers`.password, `tblservers`.secure, `tblservergroups`.name AS `groupname` FROM `tblservers` LEFT JOIN `tblservergroupsrel` ON `tblservers`.id = `tblservergroupsrel`.serverid LEFT JOIN `tblservergroups` ON `tblservergroupsrel`.groupid = `tblservergroups`.id WHERE type = 'plesk' ");
+      
       $i = 0;
+      $servers = json_decode(json_encode($servers), true); //convert from obj to array
+  		foreach ($servers as $row){  			
+        echo '<tr>';
+  			
+        echo '<td><img src="images/icons/products.png" align="absmiddle"> '.++$i.'.</td>';
+        echo '<td style="color:black;font-weight:bold">'.$row['name'].'</td>';
+        echo '<td align="center"><i>'.$row['groupname'].'</i></td>';
+        echo '<td>'.$row['ipaddress'].'</td>';
 
-		$servers = Capsule::select("SELECT `tblservers`.name, `tblservers`.hostname, `tblservers`.ipaddress, `tblservers`.maxaccounts, `tblservers`.username, `tblservers`.password, `tblservers`.secure, `tblservergroups`.name AS `groupname` FROM `tblservers` LEFT JOIN `tblservergroupsrel` ON `tblservers`.id = `tblservergroupsrel`.serverid LEFT JOIN `tblservergroups` ON `tblservergroupsrel`.groupid = `tblservergroups`.id WHERE type = 'plesk' ");
-	    
-		foreach ($servers as $row){
-			
-      echo '<tr>';
-			
-      echo '<td><img src="images/icons/products.png" align="absmiddle"> '.++$i.'.</td>';
-      echo '<td style="color:black;font-weight:bold">'.$row['name'].'</td>';
-      echo '<td align="center"><i>'.$row['groupname'].'</i></td>';
-      echo '<td>'.$row['ipaddress'].'</td>';
+  		      echo '<td align="center">';
+  		      
+  				// connect to each server and get the list of available protocols that it understands
+  				try {		
+  					try {
+  					       $curl = curlInit($row['ipaddress'], $row['username'], decrypt($row['password']), $row['secure']);
+  					       $response = sendRequest($curl, createSupportedProtocolsDocument()->saveXML());
+  					       $responseXml = parseResponse($response);
+  					       
+  					       $info = $responseXml->xpath('//proto[last()]');    // detect protocols available
+  					       
+  					      echo  $strServerProtocolVersion = (string)$info[0];
+  					      
+  					      if ($strServerProtocolVersion < "1.4.1.2") throw new ApiRequestException("");
+  					      else echo '<span style="color:green;font-size:8pt"> &#10004;</span>';
+  					       
+  					
+  				       } catch (ApiRequestException $e) {
+  					      echo '<span style="color:red;font-size:7pt"> x</span></td><td style="color:red;"><i>Version not supported</i></td>';
+  					      continue;
+  				       }
+  				} catch (Exception $e) {
+  					      echo '<span style="color:red;font-size:7pt"> x</span></td><td style="color:red;"><i>' . $e . '</i></td>';
+  					      continue;
+  				}		       
 
-		      echo '<td align="center">';
-		      
-				// connect to each server and get the list of available protocols that it understands
-				try {		
-					try {
-					       $curl = curlInit($row['ipaddress'], $row['username'], decrypt($row['password']), $row['secure']);
-					       $response = sendRequest($curl, createSupportedProtocolsDocument()->saveXML());
-					       $responseXml = parseResponse($response);
-					       
-					       $info = $responseXml->xpath('//proto[last()]');    // detect protocols available
-					       
-					      echo  $strServerProtocolVersion = (string)$info[0];
-					      
-					      if ($strServerProtocolVersion < "1.4.1.2") throw new ApiRequestException("");
-					      else echo '<span style="color:green;font-size:8pt"> &#10004;</span>';
-					       
-					
-				       } catch (ApiRequestException $e) {
-					      echo '<span style="color:red;font-size:7pt"> x</span></td><td style="color:red;"><i>Version not supported</i></td>';
-					      continue;
-				       }
-				} catch (Exception $e) {
-					      echo '<span style="color:red;font-size:7pt"> x</span></td><td style="color:red;"><i>' . $e . '</i></td>';
-					      continue;
-				}		       
+  		      echo '</td>';
 
-		      echo '</td>';
-
-		      echo '<td align="center"><div id="serverinfo_output' . $i . '"> <input type="button" value="Server Statistics"  id="serverinfobtn' .$i. '" style="color:orange" ';
-		      echo 'onClick="getServerStats(\'serverinfo_output'.$i. '\',\'ip='.$row['ipaddress'].'&l='.$row['username'].'&p='.urlencode(decrypt($row['password'])).'\')"></div></td>';     
-	  
-	  
-	              echo '<td><form action="'.$modulelink.'" method="post">';	      
-		      echo '<input name="login_name" value="'.$row['username'].'" type="hidden"><input name="passwd" value="'.decrypt($row['password']).'" type="hidden">';
-		      echo '<input name="ip" value="'.$row['ipaddress'].'" type="hidden"><input name="secure" value="'.$row['secure'].'" type="hidden">';
-		      echo '<input value="Browse Accounts..." type="submit"></form>'; 
-	              echo '</td>';
-		      
-	    
-		      
-		      echo '</tr>';
-		      
-		}
-		echo '</tbody></table></div><br />';
-		
-		showFooter();
-		
-	 // ------------------------------------------------------------------------------
+  		      echo '<td align="center"><div id="serverinfo_output' . $i . '"> <input type="button" value="Server Statistics"  id="serverinfobtn' .$i. '" style="color:orange" ';
+  		      echo 'onClick="getServerStats(\'serverinfo_output'.$i. '\',\'ip='.$row['ipaddress'].'&l='.$row['username'].'&p='.urlencode(decrypt($row['password'])).'\')"></div></td>';     
+  	  
+  	  
+  	              echo '<td><form action="'.$modulelink.'" method="post">';	      
+  		      echo '<input name="login_name" value="'.$row['username'].'" type="hidden"><input name="passwd" value="'.decrypt($row['password']).'" type="hidden">';
+  		      echo '<input name="ip" value="'.$row['ipaddress'].'" type="hidden"><input name="secure" value="'.$row['secure'].'" type="hidden">';
+  		      echo '<input value="Browse Accounts..." type="submit"></form>'; 
+  	              echo '</td>';
+  		      
+  	    
+  		      
+  		      echo '</tr>';
+  		      
+  		}
+  		echo '</tbody></table></div><br />';
+  		
+  		showFooter();
+  		
+  	 // ------------------------------------------------------------------------------
 	 
 	} else {
 		
@@ -352,28 +339,29 @@ function plesksyncwhmcs_output($vars){
 
 
 			echo '<br /><table border="0" width="1250" cellpadding="1" cellspacing="1"><tr style="border: 1px solid grey;background-color: #f8f5da"><th style="font-size:8pt;">#.</th><th style="font-size:8pt;">ID</th><th style="font-size:8pt;">Domain Name</th>';
-		        echo '<th style="font-size:8pt;" width="150">Client (Owner)</th><th style="font-size:8pt;" width="80">WHMCS Id</th>';
-		        echo '<th style="font-size:8pt;" width="70">Created</th><th style="font-size:8pt;">Status</th><th style="font-size:8pt;" width="8">Link</th><th style="font-size:8pt;" width="170">Statistics</th><th style="font-size:8pt;" width="170">Diagnosis</th><th style="font-size:8pt;" width="150">Resolution</th></tr>';
+      echo '<th style="font-size:8pt;" width="150">Client (Owner)</th><th style="font-size:8pt;" width="80">WHMCS Id</th>';
+      echo '<th style="font-size:8pt;" width="70">Created</th><th style="font-size:8pt;">Status</th><th style="font-size:8pt;" width="8">Link</th><th style="font-size:8pt;" width="170">Statistics</th><th style="font-size:8pt;" width="170">Diagnosis</th><th style="font-size:8pt;" width="150">Resolution</th></tr>';
 
 		                                                
 
 		foreach ($responseXml->xpath('/packet/domain/get/result') as $resultNode) {
 
-		      if ( (string)$resultNode->status != "ok" ) continue;
+      if ( (string)$resultNode->status != "ok" ) continue;
 
-		      $iClientId = (string)$resultNode->data->gen_info->client_id;
-		      $iDomainId = (string)$resultNode->id;
-		      $strDomainName = (string)$resultNode->data->gen_info->name;
-		      $iDomainStatus = (string)$resultNode->data->gen_info->status;   /// INCORRECT!
-		      $iAccountStatus = (string)$resultNode->data->gen_info->status;  // 0 = active, 2 = suspended (lack of payment?), 66 = suspended (over limit: disk/bandwidth)
-		      $strSolutionText ="";
-		         
-		      if ($iDomainStatus  != "0") $iCountSuspendedInPlesk++;
-		           
-		      // get info from WHMCS
-					$servers = Capsule::select("SELECT `tblhosting`.`userid`, `tblhosting`.`id`,  `tblhosting`.`domainstatus`,`tblhosting`.`username`,`tblhosting`.`password`  from `tblhosting` WHERE `tblhosting`.`domain` = '".$strDomainName."' ORDER BY regdate  DESC LIMIT 1");
-
-		      foreach( $servers as $row ){
+      $iClientId = (string)$resultNode->data->gen_info->client_id;
+      $iDomainId = (string)$resultNode->id;
+      $strDomainName = (string)$resultNode->data->gen_info->name;
+      $iDomainStatus = (string)$resultNode->data->gen_info->status;   /// INCORRECT!
+      $iAccountStatus = (string)$resultNode->data->gen_info->status;  // 0 = active, 2 = suspended (lack of payment?), 66 = suspended (over limit: disk/bandwidth)
+      $strSolutionText ="";
+         
+      if ($iDomainStatus  != "0") $iCountSuspendedInPlesk++;
+           
+      // get info from WHMCS
+			$plans = Capsule::select("SELECT `tblhosting`.`userid`, `tblhosting`.`id`,  `tblhosting`.`domainstatus`,`tblhosting`.`username`,`tblhosting`.`password`  from `tblhosting` WHERE `tblhosting`.`domain` = '".$strDomainName."' ORDER BY regdate  DESC LIMIT 1");
+      $plans = json_decode(json_encode($plans), true); //convert from obj to array
+      
+      foreach( $plans as $row ){
 		      
 		      if ($row) {
 		                  $iWHMCSClientId = $row['userid'];
@@ -391,6 +379,7 @@ function plesksyncwhmcs_output($vars){
 				   
 		                        // search for domain name match in WHMCS (Plesk API does not return full users stats unless you request a single domain)
 														$domains = Capsule::select("SELECT *  from `tbldomains` WHERE `domain` = '".$strDomainName."' LIMIT 1");
+                            $domains = json_decode(json_encode($domains), true); //convert from obj to array
 														$rowDomain = $domains[0];
 					
 		                        if ($rowDomain) {
@@ -405,6 +394,7 @@ function plesksyncwhmcs_output($vars){
 						
 						// get list of packages
 						$packages = Capsule::select("SELECT name, id FROM `tblproducts` WHERE `servertype` = 'plesk' ORDER BY `name` ASC");
+            $packages = json_decode(json_encode($packages), true); //convert from obj to array
 						foreach($packages as $rowProducts)  $strSolutionText .= '<option value="' . $rowProducts['id'] . '">' . $rowProducts['name'] . '</option>';
 											      
 						$strSolutionText .= '</select><br /><br /><input type="checkbox" id="createinvoice' . $iCnt. '" name="createinvoice' . $iCnt. '" style="font-size:6pt;color:black;"><label for="createinvoice' . $iCnt. '">Generate invoice?</label><br />';   // checked="checked"
@@ -505,15 +495,15 @@ function plesksyncwhmcs_output($vars){
 		      
 		     						      
 		     
-		}
+		 }
 
-			echo "</table>\n<br /><br />";
-		 
-				if ($iCnt == 0) echo '<div align="center" style="padding-top:50px;padding-bottom:90px;color:red;font-weight:bold">( Sorry, there are no client domains accounts within this range... )</div><br />';
-				else echo '<div style="color:black"><i>(<strong>' . $iCnt . '</strong> of <strong>' .  $iMaxResultsPerPage . '</strong>), client domain accounts found within this range.</i></div><br />';
+  		echo "</table>\n<br /><br />";
+  	 
+  		if ($iCnt == 0) echo '<div align="center" style="padding-top:50px;padding-bottom:90px;color:red;font-weight:bold">( Sorry, there are no client domains accounts within this range... )</div><br />';
+  		else echo '<div style="color:black"><i>(<strong>' . $iCnt . '</strong> of <strong>' .  $iMaxResultsPerPage . '</strong>), client domain accounts found within this range.</i></div><br />';
 				
 				
-				showNavigationButtons($iPageNumber, $_POST['ip'], $_POST['login_name'], $_POST['passwd'], $_POST['secure']);	
+			showNavigationButtons($iPageNumber, $_POST['ip'], $_POST['login_name'], $_POST['passwd'], $_POST['secure']);	
 			 
 		 /*
 		 // collect some statistics  
@@ -534,9 +524,11 @@ function plesksyncwhmcs_output($vars){
 			ShowFooter();
 
 
-	}
+	   } //endforeach
+     
+  } //end if($post) else portion
 	
-}
+} //end module output function
 
 
 
@@ -562,7 +554,7 @@ function getViewDomainsButton($ip, $login, $password, $secure, $button_text = 'B
 }
 // --------------------
 function showHeaderTitleVersion() {	
-	echo '<img src="../modules/admin/plesksync/images/plesksync-icon.png" align="absmiddle"> <strong>Plesk Sync for WHMCS - v1.0.1 Beta (Sept-23-2010)</strong><br /><br />';
+	echo '<img src="../modules/addons/plesksync/images/plesksync-icon.png" align="absmiddle"> <strong>Plesk Sync for WHMCS<br /><br />';
 }
 // --------------------
 function showNavigationButtons($page_number, $ip, $login, $password, $secure) {	
