@@ -13,8 +13,6 @@ if (!defined("WHMCS")) {
 
 set_include_path( get_include_path() . PATH_SEPARATOR . $_SERVER['DOCUMENT_ROOT'] );
 include ("plesksync.class.php");  // include the ApiRequestException extension class
-include ("config.php");           // plesksync config
-
 
 function plesksyncwhmcs_config()
 {
