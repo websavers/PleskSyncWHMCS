@@ -110,28 +110,28 @@ function plesksync_output($vars){
     		  echo '<td align="center">';
   		      
   				// connect to each server and get the list of available protocols that it understands
-  				try {		
-  					try {
-              $curl = curlInit($row['ipaddress'], $row['username'], decrypt($row['password']), $row['secure']);
-              $response = sendRequest($curl, createSupportedProtocolsDocument()->saveXML());
-              $responseXml = parseResponse($response);
+  				try {
+            $requestXml = createSupportedProtocolsDocument()->saveXML();
+            $curl = curlInit($row['ipaddress'], $row['username'], decrypt($row['password']), $row['secure']);
+            $response = sendRequest($curl, $requestXml);
+            $responseXml = parseResponse($response);
 
-              $info = $responseXml->xpath('//proto[last()]');    // detect protocols available
+            $info = $responseXml->xpath('//proto[last()]');    // detect protocols available
 
-              echo  $strServerProtocolVersion = (string)$info[0];
-				      
-				      if ($strServerProtocolVersion < "1.4.1.2") throw new ApiRequestException("");
-				      else echo '<span style="color:green;font-size:8pt"> &#10004;</span>';  
-				
-			       } 
-             catch (ApiRequestException $e) {
+            echo  $strServerProtocolVersion = (string)$info[0];
+			      
+			      if ($strServerProtocolVersion < "1.4.1.2"){
               echo '<span style="color:red;font-size:7pt"> x</span></td><td style="color:red;"><i>Version not supported</i></td>';
               continue;
-			       }
+            }
+			      else{ 
+              echo '<span style="color:green;font-size:8pt"> &#10004;</span>';  
+            }
+            logModuleCall('plesksync', 'pleskGetProtocol', (string)$requestXml, (string)$responseXml, $info, $replaceVars = "");
   				} 
           catch (Exception $e) {
-					      echo '<span style="color:red;font-size:7pt"> x</span></td><td style="color:red;"><i>' . $e . '</i></td>';
-					      continue;
+			      echo '<span style="color:red;font-size:7pt"> x</span></td><td style="color:red;"><i>' . $e . '</i></td>';
+			      continue;
   				}		       
 
 		      echo '</td>';
@@ -266,7 +266,7 @@ function plesksync_output($vars){
 		      echo '<td style="font-size:8pt;color:#6a6d6e;white-space: nowrap;" align="center">' . $iDomainId . '</td>';
 		      
 		      if (!$bFoundinWHCMS) echo '<td style="font-size:8pt;"><strong>' . $strDomainName . '</strong>';
-		      else echo '<td style="font-size:8pt"><a href="/controle/admin/clientshosting.php?userid=' .  $iWHMCSClientId  . '&hostingid=' . $iWHMCSHostingId . '">' . $strDomainName . '</a>';
+		      else echo '<td style="font-size:8pt"><a href="' . $vars['systemurl'] . '/admin/clientshosting.php?userid=' .  $iWHMCSClientId  . '&hostingid=' . $iWHMCSHostingId . '">' . $strDomainName . '</a>';
 		      
           echo '</td>';
 		      echo '<td style="font-size:8pt;white-space: nowrap"><center>';
@@ -275,7 +275,7 @@ function plesksync_output($vars){
 		      echo '<div id="userinfo_output' . $iCnt . '"><center><input type="button" value="Details"  id="userinfobtn' .$iCnt. '" onClick="GetAccountDetailsPlesk(\'userinfo_output'.$iCnt. '\',\'did=' . $iClientId  .  '&ip='.$strIp .'&l=' . $_POST['login_name'] . '&p='.urlencode($_POST['passwd']).'&secure='.$bSecure .'\')"></center></div></td>';
 
 		      if (!$bFoundinWHCMS)        echo '<td style="font-size:8pt;white-space: nowrap;">' . $iWHMCSClientId . '</td>';   
-		      else echo '<td style="font-size:8pt;white-space: nowrap;"><a href="/controle/admin/clientsdomains.php?id=' . $iWHMCSClientId . '" style="text-decoration: none;">' . $iWHMCSClientId . '</a></td>';
+		      else echo '<td style="font-size:8pt;white-space: nowrap;"><a href="' . $vars['systemurl'] . '/admin/clientsdomains.php?id=' . $iWHMCSClientId . '" style="text-decoration: none;">' . $iWHMCSClientId . '</a></td>';
 		  
 		      echo '<td style="font-size:8pt;white-space: nowrap">' . (string)$resultNode->data->gen_info->cr_date . '</td>';
 		      echo '<td style="font-size:8pt;white-space: nowrap" align="center">';
