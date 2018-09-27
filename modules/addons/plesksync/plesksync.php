@@ -77,7 +77,7 @@ function plesksync_output($vars){
   $module_abspath               = __DIR__;
 	
 	$strIp = (isset($_POST['ip']) ? $_POST['ip'] : $_GET['ip']);
-  
+    
   echo '<img src="' . $module_relpath . '/images/plesksync-icon.png" align="absmiddle"> <strong>Plesk Sync for WHMCS<br /><br />';
   
   // javascript code to launch the ajax code which can unsuspend accounts in Plesk and import from Plesk => WHMCS		
@@ -256,7 +256,7 @@ function plesksync_output($vars){
 		        }
 		                    
 		      } 
-
+          
 		      if (!$bFoundinWHCMS && !$bhasWHMCSDomainAccount) echo '<tr style="background-color: #fbb8b8;">';
 		      else if (!$bFoundinWHCMS && $bhasWHMCSDomainAccount)  echo '<tr style="background-color: #FBEEEB;">';
 		      else if ($iCnt % 2) echo '<tr style="background-color: #dee8f3">';
@@ -266,7 +266,7 @@ function plesksync_output($vars){
 		      echo '<td style="font-size:8pt;color:#6a6d6e;white-space: nowrap;" align="center">' . $iDomainId . '</td>';
 		      
 		      if (!$bFoundinWHCMS) echo '<td style="font-size:8pt;"><strong>' . $strDomainName . '</strong>';
-		      else echo '<td style="font-size:8pt"><a href="' . $vars['systemurl'] . '/admin/clientshosting.php?userid=' .  $iWHMCSClientId  . '&hostingid=' . $iWHMCSHostingId . '">' . $strDomainName . '</a>';
+		      else echo '<td style="font-size:8pt"><a href="clientshosting.php?userid=' .  $iWHMCSClientId  . '&hostingid=' . $iWHMCSHostingId . '">' . $strDomainName . '</a>';
 		      
           echo '</td>';
 		      echo '<td style="font-size:8pt;white-space: nowrap"><center>';
@@ -275,7 +275,7 @@ function plesksync_output($vars){
 		      echo '<div id="userinfo_output' . $iCnt . '"><center><input type="button" value="Details"  id="userinfobtn' .$iCnt. '" onClick="GetAccountDetailsPlesk(\'userinfo_output'.$iCnt. '\',\'did=' . $iClientId  .  '&ip='.$strIp .'&l=' . $_POST['login_name'] . '&p='.urlencode($_POST['passwd']).'&secure='.$bSecure .'\')"></center></div></td>';
 
 		      if (!$bFoundinWHCMS)        echo '<td style="font-size:8pt;white-space: nowrap;">' . $iWHMCSClientId . '</td>';   
-		      else echo '<td style="font-size:8pt;white-space: nowrap;"><a href="' . $vars['systemurl'] . '/admin/clientsdomains.php?id=' . $iWHMCSClientId . '" style="text-decoration: none;">' . $iWHMCSClientId . '</a></td>';
+		      else echo '<td style="font-size:8pt;white-space: nowrap;"><a href="clientsdomains.php?id=' . $iWHMCSClientId . '" style="text-decoration: none;">' . $iWHMCSClientId . '</a></td>';
 		  
 		      echo '<td style="font-size:8pt;white-space: nowrap">' . (string)$resultNode->data->gen_info->cr_date . '</td>';
 		      echo '<td style="font-size:8pt;white-space: nowrap" align="center">';
