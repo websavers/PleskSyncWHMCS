@@ -63,8 +63,8 @@ Download
 Requirements
 ------------
 
-   * WHMCS v4+
-   * PHP5 (with cURL and SimpleXML)
+   * WHMCS v7+ (tested with 7.6.1)
+   * PHP7.1+ (with cURL and SimpleXML)
    * Plesk v8.1+ for Linux/Unix & Windows (packet protocol > 1.4.1.0)
 
 
@@ -80,8 +80,8 @@ Installation
          $whmcs_addorder_payment = "paypal";                # payment gateway for new invoiced hosting 
          $whmcs_addorder_billingcycle = "Monthly";          # invoice billing cycle for new invoice hosting
              
-   3) Upload via FTP the folder "plesksync" (including subdirectories) to your whmcs web server,
-      at this location: **/whmcs_default_directory/modules/admin/**
+   3) Upload the entire PleskSyncWHMCS folder (including subdirectories) to your whmcs web server,
+      at this location: **/whmcs_default_directory/modules/addons/**
 
 
 Usage Instructions
