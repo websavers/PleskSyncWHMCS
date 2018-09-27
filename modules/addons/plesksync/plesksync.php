@@ -87,20 +87,15 @@ function plesksync_output($vars){
 	if (empty($_POST)) {
     
   	// }}---------------------[MAIN() Default Page - Show active Plesk Servers]---------------------------------------------------------
+?>
+	    <p>Plesk Sync is an addon module for WHMCS to import, control, create and synchronize client hosting accounts with your Parallel Plesk servers.</p>
+	    <p>Accounts are color-coded, reports a diagnosis and resolution, contains statistics on disk space and traffic, detailed client profile information and command buttons to resolve.</p>
+	    <p>&rArr; Auto-detecting servers...</p>
+	    <h2>Plesk Servers</h2>
 
-	    echo 'Plesk Sync is an addon module for WHMCS to import, control, create and synchronize client hosting accounts with your Parallel Plesk servers. <br />';
-	 
-	    echo '<div style="padding-left:25px;padding-top:3px">';
-	    echo 'Accounts are color-coded, reports a diagnosis and resolution, contains statistics on disk space and traffic, detailed client profile information and command buttons to resolve.<br /><br />';
-	    
-	    echo "</div><br />";
-	    echo "&rArr; Auto-detecting servers...";
-	    
-	    echo '<h2>Plesk Servers</h2>';
-
-      echo '<div class="tablebg"><table class="datatable" border="0" cellpadding="3" cellspacing="1" width="100%">';
-      echo '<tbody><tr><th width="85">#</th><th>Server Name</th><th>Group</th><th width="95">Host (IP) </th><th width="100">Protocol</th><th width="220">Stats</th><th></th></tr>';
-      
+      <div class="tablebg"><table class="datatable" border="0" cellpadding="3" cellspacing="1" width="100%">
+      <tbody><tr><th width="85">#</th><th>Server Name</th><th>Group</th><th width="95">Host (IP) </th><th width="100">Protocol</th><th width="220">Stats</th><th></th></tr>
+<?php
   		$servers = Capsule::select("SELECT `tblservers`.name, `tblservers`.hostname, `tblservers`.ipaddress, `tblservers`.maxaccounts, `tblservers`.username, `tblservers`.password, `tblservers`.secure, `tblservergroups`.name AS `groupname` FROM `tblservers` LEFT JOIN `tblservergroupsrel` ON `tblservers`.id = `tblservergroupsrel`.serverid LEFT JOIN `tblservergroups` ON `tblservergroupsrel`.groupid = `tblservergroups`.id WHERE type = 'plesk' ");
       
       $i = 0;
