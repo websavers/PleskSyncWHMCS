@@ -1,10 +1,10 @@
 function getServerStats(outputtag, data) {
   
-  $('#' + outputtag).html("<img src='../modules/admin/plesksync/images/wait_details.gif'>");
+  $('#' + outputtag).html("<img src='" + moduledir + "/images/wait_details.gif'>");		
                 
   $.ajax({
     method: 'get',
-    url: '../modules/admin/plesksync/ajax/ajaxGetServerStats.php',
+    url: moduledir + '/ajax/ajaxGetServerStats.php',
     data: data,
     dataType: 'text',
     success: function (response) {
@@ -48,9 +48,8 @@ function GetAccountDetailsPlesk(outputtag, data) {
 
 function ImportPleskAccount(outputtag, data) {
   
-        $('#' + outputtag).html("<img src='" + moduledir + "/images/wait_import.gif'>");
-        
-        
+  $('#' + outputtag).html("<img src='" + moduledir + "/images/wait_import.gif'>");
+
   $.ajax({
     method: 'get',
     url: moduledir + '/ajax/ajaxImportPleskAccount.php',
