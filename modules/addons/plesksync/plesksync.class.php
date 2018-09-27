@@ -8,7 +8,7 @@ class ApiRequestException extends Exception {}
 // ------------------------------------------------------------------------------------------------------------
 function createSomeDomainsDocument($iFrom, $iTo) {
 
-        $strPacket = '<packet version="1.4.1.2"><domain><get><filter>';
+        $strPacket = '<packet><domain><get><filter>';
         $i = $iFrom;
         while ($i <= $iTo) {
             $strPacket .= '<id>'.$i++.'</id>';   
@@ -24,7 +24,7 @@ return $xmlDomDoc;
 // ------------------------------------------------------------------------------------------------------------
 function createSupportedProtocolsDocument() {
 
-        $strPacket = '<packet version="1.4.1.2"><server><get_protos/></server></packet>';
+        $strPacket = '<packet><server><get_protos/></server></packet>';
         
         $xmlDomDoc = new DomDocument('1.0', 'UTF-8');    
         $xmlDomDoc->formatOutput = true;
@@ -39,7 +39,6 @@ function createAllDomainsDocument() {
       $xmldoc->formatOutput = true;
 
       $packet = $xmldoc->createElement('packet');
-      $packet->setAttribute('version', '1.4.1.2');
       $xmldoc->appendChild($packet);
 
       // <packet/domain>
