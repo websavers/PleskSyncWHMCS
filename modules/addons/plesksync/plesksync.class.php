@@ -6,7 +6,7 @@
 // ------------------------------------------------------------------------------------------------------------
 class ApiRequestException extends Exception {}
 // ------------------------------------------------------------------------------------------------------------
-function createSomeDomainsDocument($iFrom, $iTo) {
+function createPagedDomainsDocument($iFrom, $iTo) {
 
         $strPacket = '<packet><webspace><get><filter>';
         $i = $iFrom;
@@ -15,23 +15,17 @@ function createSomeDomainsDocument($iFrom, $iTo) {
         }
         //$strPacket .= '</filter><dataset><user/><gen_info/><stat/></dataset></get></webspace></packet>';
         $strPacket .= '</filter><dataset><gen_info/><stat/></dataset></get></webspace></packet>';
-        
-        $xmlDomDoc = new DomDocument('1.0', 'UTF-8');
-        $xmlDomDoc->formatOutput = true;
-        $xmlDomDoc->loadXML($strPacket);
 
-return $xmlDomDoc;
+return createPacket($strPacket);
 }
 // ------------------------------------------------------------------------------------------------------------
-function createSupportedProtocolsDocument() {
+function createPacket($xmlstring) {
+  
+  $xmlDomDoc = new DomDocument('1.0', 'UTF-8');    
+  $xmlDomDoc->formatOutput = true;
+  $xmlDomDoc->loadXML($xmlstring);
 
-        $strPacket = '<packet><server><get_protos/></server></packet>';
-        
-        $xmlDomDoc = new DomDocument('1.0', 'UTF-8');    
-        $xmlDomDoc->formatOutput = true;
-        $xmlDomDoc->loadXML($strPacket);
-
-return $xmlDomDoc;
+return $xmlDomDoc->saveXML();
 }
 // ------------------------------------------------------------------------------------------------------------
 function createAllDomainsDocument() {
@@ -98,6 +92,9 @@ function sendRequest($curl, $packet) {
       }
 
       curl_close($curl);
+      
+      logModuleCall('plesksync', 'sendRequest', (string)$packet, (string)$result, $processedData = "", $replaceVars = "");
+
       return $result;
 }
 // ------------------------------------------------------------------------------------------------------------
@@ -120,6 +117,7 @@ function checkResponse(SimpleXMLElement $response) {
         if (isset($response)) {
                
              $resultNode = $response->xpath('//*[name()="system"]');    // login error and such return 'system' schema
+             if (!$resultNode) $resultNode = $response->xpath('//*[name()="result"]');
              
                 if ((string)$resultNode[0]->status == "error") {
                
@@ -132,6 +130,5 @@ function checkResponse(SimpleXMLElement $response) {
  
 }
 // ------------------------------------------------------------------------------------------------------------
-
 
 ?>

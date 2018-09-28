@@ -1,10 +1,10 @@
 function getServerStats(outputtag, data) {
   
   $('#' + outputtag).html("<img src='" + moduledir + "/images/wait_details.gif'>");		
-                
+    
   $.ajax({
     method: 'get',
-    url: moduledir + '/ajax/ajaxGetServerStats.php',
+    url: modulelink + '&ps_action=GetServerStats',
     data: data,
     dataType: 'text',
     success: function (response) {
@@ -20,7 +20,7 @@ function ChangeAccountStatusPlesk(outputtag, data) {
         
   $.ajax({
     method: 'get',
-    url: moduledir + '/ajax/ajaxChangeStatusInPlesk.php',
+    url: modulelink + '&ps_action=ChangeStatusInPlesk',
     data: data,
     dataType: 'text',
     success: function (response) {
@@ -33,10 +33,10 @@ function ChangeAccountStatusPlesk(outputtag, data) {
 function GetAccountDetailsPlesk(outputtag, data) {
 
   $('#' + outputtag).html("<img src='" + moduledir + "/images/wait_details.gif'>");    
-        
+  
   $.ajax({
     method: 'get',
-    url: moduledir + '/ajax/ajaxGetPleskAccountDetails.php',
+    url: modulelink + '&ps_action=GetPleskAccountDetails',
     data: data,
     dataType: 'text',
     success: function (response) {
@@ -52,7 +52,7 @@ function ImportPleskAccount(outputtag, data) {
 
   $.ajax({
     method: 'get',
-    url: moduledir + '/ajax/ajaxImportPleskAccount.php',
+    url: modulelink + '&ps_action=ImportPleskAccount',
     data: data,
     dataType: 'text',
     success: function (response) {
@@ -82,7 +82,8 @@ function CreateWHMCSAccount(outputtag, data, first, last, company, email, phone,
      
     $.ajax({
       method: 'get',
-      url: moduledir + '/ajax/ajaxCreateWHMCSAccount.php',
+      url: modulelink + '&ps_action=CreateWHMCSAccount',
+      //url: moduledir + '/ajax/ajaxCreateWHMCSAccount.php',
       data: data + "&first=" + strFirst + "&last=" + strLast + "&company=" + strCompany + "&email=" + strEmail + "&phone=" + strPhone + "&address1=" + strAddress1 + "&city=" + strCity + "&state=" + strState + "&postcode=" + strPostcode + "&country=" + strCountry + "&login=" + strLogin + "&password=" + strPassword + "&sendemail=" + bSendemail,
       dataType: 'text',
       success: function (response) {
@@ -102,7 +103,8 @@ function CreateWHMCSOrder(outputtag, data, packageid, createinvoice, sendemail) 
      
     $.ajax({
       method: 'get',
-      url: moduledir + '/ajax/ajaxCreateWHMCSOrder.php',
+      url: modulelink + '&ps_action=CreateWHMCSOrder',
+      //url: moduledir + '/ajax/ajaxCreateWHMCSOrder.php',
       data: data + "&packageid=" + strPackageid + "&sendemail=" + bSendemail + "&createinvoice=" +  bCreateInvoice,
       dataType: 'text',
       success: function (response) {
