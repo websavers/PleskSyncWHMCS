@@ -8,11 +8,11 @@
 if (!defined("WHMCS")) {
     die("This file cannot be accessed directly");
 }
-include ("plesksync.class.php");  // include the ApiRequestException extension class
+include ("plesksync.class.php");
 
 use WHMCS\Database\Capsule;
 
-set_include_path( get_include_path() . PATH_SEPARATOR . $_SERVER['DOCUMENT_ROOT'] );
+//set_include_path( get_include_path() . PATH_SEPARATOR . $_SERVER['DOCUMENT_ROOT'] );
 
 function plesksync_config()
 {
@@ -179,7 +179,7 @@ function plesksync_output($vars){
           $curl = curlInit($_GET['ip'], $_GET['l'], urldecode($_GET['p']), $_GET['secure']);
 
           try {
-          try {
+            try {
 
                 echo '<span style="font-size:7pt;color:black">';
                 echo "&rArr; Connecting to Plesk server (".$_GET['ip'].")...<br />";
@@ -203,170 +203,141 @@ function plesksync_output($vars){
                 checkResponse($responseXml);
 
                 echo '</span>';
-                
-          } catch (ApiRequestException $e) { echo $e; die(); }
+                  
+            } catch (ApiRequestException $e) { echo $e; die(); }
           } catch (Exception $e) { echo $e; die(); }
       
         break;
-      case 'CreateWHMCSAccount': //Need to switch this to localAPI() calls.
+      case 'CreateWHMCSAccount':
       
-          include ("Whmcs.Api.class.php");
           $bNoEmail = (($_GET["sendemail"] == "true") ? 'false' : 'true');
-          //header('Content-Type: text/html; charset=UTF-8');   // required for ajax output            
-          $whmcsObj = new WhmcsApiWrapper();
-          $whmcsObj->setApiUrl($whmcs_api_url);           // path to http://yoursite.com/whmcs_dir/includes/api.php
-          $whmcsObj->setLoginAccessAutomatic($db_username,$db_password, $db_name, $db_host);    // no entries in config.php: try to auto-detect
         
-          echo '&rArr; WHMCS API: AddClient...<br />';   
-
-          $iResult = $whmcsObj->addClient(
-              $_GET['first'],                                 // first name
-              $_GET['last'],                                  // last name
-              $_GET['company'],                               // (optional) company name
-              $_GET['email'],                                 // e-mail address (also username)
-              $_GET['password'],                              // plain text password for account
-              $_GET['address1'],                              // address 1
-              "",                                             // (optional) address 2 - [*NOT used by Plesk*]
-              $_GET['city'],                                  // city
-              $_GET['state'],                                 // state
-              $_GET['postcode'],                              // postcode
-              $_GET['country'],                               // two-letter ISO country code
-              $_GET['phone'],                                 // telephone number (numbers, dashes and spaces only!)
-              $bNoEmail,                                      // pass as true to surpress the client signup welcome email sending
-              "1",                                            // default currency                                        
-              '*** Imported via Plesk Sync on (' . date("F j, Y, g:i a") . ')  *** (Please check: Payment Method, Pricing, Billing Cycle & Next Due Date)',      // (optional) admin notes
-              "",                                     // (optional) group id
-              "",                                     // (optional) credit card type
-              "",                                     // (optional) credit card number
-              "",                                     // (optional) credit card expiration (MMYY)
-              "",                                     // (optional) start date   
-              "",                                     // (optional) issue number
-              ""                                      // (optional) custom fields: a base64 encoded serialized array of custom field values,  ex: base64_encode(serialize(array("1"=>"Google"))); 
-          );
-
-          if ($iResult) {
-            
-              $objData = $whmcsObj->getTransactionData();        
-              $iClientId = $objData["clientid"];
+          echo '&rArr; WHMCS API: AddClient...<br />';
+          
+          $values = array(
+              'firstname'   => $_GET['first'],
+              'lastname'    => $_GET['last'],
+              'companyname' => $_GET['company'],
+              'email'       => $_GET['email'],
+              'address1'    => $_GET['address1'],
+              'address2'    => "", //Plesk doesn't use this
+              'city'        => $_GET['city'],
+              'state'       => $_GET['state'],
+              'postcode'    => $_GET['postcode'],
+              'country'     => $_GET['country'],
+              'phonenumber' => $_GET['phone'],
+              'password2'   => $_GET['password'],
+              'currency'    => "1", //default
+              'notes'       => '*** Imported via Plesk Sync on (' . date("F j, Y, g:i a") . ')  *** (Please check: Payment Method, Pricing, Billing Cycle & Next Due Date)', //admin only notes
+              'noemail'     => false, //skip sending welcome email
+              //'skipvalidation' => true, //ignore required fields validation
               
-              echo '<span style="color:green"><br />&#10004; Added new client:</span><br /><br />&bull; Name: '. $_GET['first'] . ' ' . $_GET['last'] . '<br />&bull; Id: <a href="clientssummary.php?userid=' . $results["clientid"] . '" target="_blank">#' . $results["clientid"] . '</a>.<br />';
-              if (!$bNoEmail) echo '&raquo; Welcome e-mail sent.<br />';
-                                  
+          );
+          
+          if ($bNoEmail){
+            $values['noemail'] = true;
+          }
+          
+          $results = localAPI('AddClient', $values);
+          
+          if ($results['result'] == 'success') {
+            $iClientId = $results["clientid"];
+            
+            echo '<span style="color:green"><br />&#10004; Added new client:</span><br /><br />&bull; Name: '. $_GET['first'] . ' ' . $_GET['last'] . '<br />&bull; Id: <a href="clientssummary.php?userid=' . $results["clientid"] . '" target="_blank">#' . $results["clientid"] . '</a>.<br />';
+            if (!$bNoEmail) echo '&raquo; Welcome e-mail sent.<br />';
           } else {
-
-              $objData = $whmcsObj->getTransactionData();
-              echo '<span style="color:red">x WHMCS API Error: ' . $objData["errormessage"] . '<br />';
-      
+              echo '<span style="color:red">x WHMCS API Error: ' . $results['result'] . '<br />';
           }
       
         break;
-      case 'CreateWHMCSOrder': //Need to switch this to use localAPI()
+      case 'CreateWHMCSOrder':
       
           $bNoEmail = (($_GET["sendemail"] == "true") ? 'false' : 'true');
           $bNoInvoice = (($_GET["createinvoice"] == "true") ? 'false' : 'true');
-          //header('Content-Type: text/html; charset=UTF-8');   // required for ajax output
-          $whmcsObj = new WhmcsApiWrapper();
-          $whmcsObj->setApiUrl($whmcs_api_url);           // path to http://yoursite.com/whmcs_dir/includes/api.php
-          $whmcsObj->setLoginAccessAutomatic($db_username,$db_password, $db_name, $db_host);
-        
         
           // WHMCS API :: AddOrder
           // -----------------------------------------------------------------------------------------------------
 
           echo '<span style="color:black">&rArr; WHMCS API: AddOrder...<br />';
-
-          $iResult = $whmcsObj->addOrder(
-              $_GET["domain"],                         // domain name
-              $_GET["clientid"],                       // client id for to attach order to
-              $_GET["packageid"],                      // product id
-              $whmcs_addorder_payment,                 // paypal, authorize, webmoney etc...
-              $whmcs_addorder_billingcycle,            // onetime, monthly, quarterly, semiannually, etc..
-              $bNoInvoice,                             // set true to not generate an invoice for this order
-              $bNoEmail,                               // set true to surpress the order confirmation email
-              "",                     // (optional) addons - comma seperated list of addon ids
-              "",                     // (optional) a base64 encoded serialized array of custom field values
-              "",                     // (optional) a base64 encoded serialized array of configurable product options
-              "",                     // (optional) set only for domain registration - register or transfer
-              "",                     // (optional) set only for domain registration - 1,2,3,etc..
-              "",                     // (optional) set only for domain registration - true to enable
-              "",                     // (optional) set only for domain registration - true to enable	
-              "",                     // (optional) set only for domain registration - true to enable	
-              "",                     // (optional) eppcode - set only for domain transfer
-              "",                     // (optional) set only for domain registration - DNS Nameserver #1
-              "",                     // (optional) set only for domain registration - DNS Nameserver #2
-              "",                     // (optional) set only for domain registration - DNS Nameserver #3
-              "",                     // (optional) set only for domain registration - DNS Nameserver #4	
-              "",                     // (optional) pass coupon code to apply to the order (optional)	
-              "",                     // (optional) affiliate ID if you want to assign the order to an affiliate (optional)
-              ""                      // (optional) can be used to pass the customers IP (optional)
+          
+          $values = array(
+              'clientid'      => $_GET["clientid"],
+              'paymentmethod' => $whmcs_addorder_payment, //FIX
+              'pid'           => $_GET["packageid"],
+              'domain'        => $_GET["domain"],
+              'billingcycle'  => $whmcs_addorder_billingcycle, //FIX
+              'noinvoice'     => $bNoInvoice,
+              'noinvoiceemail' => $bNoEmail,
           );
-
-          if ($iResult) {         // operation was successful
-             
-            $objData = $whmcsObj->getTransactionData();
+          
+          if ($bNoEmail){
+            $values['noemail'] = true;
+          }
+          
+          $results = localAPI('AddOrder', $values);
+          
+          if ($results['result'] == 'success') {
             
-            $iOrderId = $objData["orderid"];
-            $iInvoiceId = $objData["invoiceid"];      // sometimes empty
-            $iProductIds = $objData["productids"];
-      
-            echo '<br /><span style="color:green;"> &#10004; Successfully added!</span><br /><br />';
-            echo '&bull; Client: #' . $_GET["clientid"] .' <br />&bull; Hosting: ' . $_GET["domain"] . '<br />&bull; Package: #' . $_GET["packageid"] .' <br /><br />';
-            echo '&raquo; Order Id #' . $iOrderId . '<br />';
-            
-            if (!empty($iInvoiceId)) echo '&raquo;  <a href="invoices.php?action=edit&id=' . $iInvoiceId . '" target="_blank">Invoice #' . $iInvoiceId . '</a><br />';
-            
-            echo '&raquo; <a href="clientshosting.php?userid=' . $_GET["clientid"] . '&id=' . $iProductIds . '">Product Id # ' . $iProductIds . '</a><br />';
-            
-            if (!$bNoInvoice) echo '&raquo; Invoice was generated.<br />';
-            if (!$bNoEmail) echo '&raquo; Order confirmation e-mail sent.<br />';
-
-
-            // WHMCS API :: EncryptPassword
-            // -----------------------------------------------------------------------------------------------------            
-            if (isset($_GET["client_login"]) && isset($_GET["client_password"])) {       // need to use WHMCS API to encrypt the password first!
-
-                echo '<br /><span style="color:black">&rArr; WHMCS API: EncryptPassword...</span>';
-                
-                $iResult = $whmcsObj->encryptPassword(urldecode($_GET["client_password"]));
-                $objData = $whmcsObj->getTransactionData();         
-                if ($iResult) {         // operation was successful
-                    $whmcsEncryptedPassword = $objData["password"];
-                    echo '<span style="color:green;"> &#10004;</span> ';
-                } else {                                     
-                    echo '<br /><div style="color:red">x WHMCS API Error: ' . $objData["errormessage"] . '</div>';
-                    continue;  // *** continue
-                }
-                
-                // manually change the username and password in the database
-                echo '<br /><span style="color:black">&rArr; Setting the login & password for hosting...<br />';				
-                
-                $queryUpdateResult = Capsule::update("UPDATE `tblhosting` SET `username` = '" .$_GET["client_login"] . "', `password` = '" . $whmcsEncryptedPassword . "' WHERE `id` = ". $iProductIds);
-                                                      
-            } 
-            else '<div style="color:red">&rArr; Note: Username & password are blank.</div>';                        
+              $iOrderId = $results["orderid"];
+              $iInvoiceId = $results["invoiceid"];      // sometimes empty
+              $iProductIds = $results["productids"];
         
-          } 
-          else {                        
-              $objData = $whmcsObj->getTransactionData();
-              echo '<div style="color:red">x WHMCS API Error: ' . $objData["errormessage"] . '</div>';
+              echo '<br /><span style="color:green;"> &#10004; Successfully added!</span><br /><br />';
+              echo '&bull; Client: #' . $_GET["clientid"] .' <br />&bull; Hosting: ' . $_GET["domain"] . '<br />&bull; Package: #' . $_GET["packageid"] .' <br /><br />';
+              echo '&raquo; Order Id #' . $iOrderId . '<br />';
               
+              if (!empty($iInvoiceId)) echo '&raquo;  <a href="invoices.php?action=edit&id=' . $iInvoiceId . '" target="_blank">Invoice #' . $iInvoiceId . '</a><br />';
+              
+              echo '&raquo; <a href="clientshosting.php?userid=' . $_GET["clientid"] . '&id=' . $iProductIds . '">Product Id # ' . $iProductIds . '</a><br />';
+              
+              if (!$bNoInvoice) echo '&raquo; Invoice was generated.<br />';
+              if (!$bNoEmail) echo '&raquo; Order confirmation e-mail sent.<br />';
+
+              // WHMCS API :: EncryptPassword
+              // -----------------------------------------------------------------------------------------------------            
+              if (isset($_GET["client_login"]) && isset($_GET["client_password"])) {       // need to use WHMCS API to encrypt the password first!
+
+                  echo '<br /><span style="color:black">&rArr; WHMCS API: EncryptPassword...</span>';
+                  
+                  $EPResult = localAPI( 'EncryptPassword', array( 'password2' => urldecode($_GET["client_password"]) ) );
+                  
+                  if ($EPResult['result'] == 'success') {         // operation was successful
+                      $whmcsEncryptedPassword = $EPResult["password"];
+                      echo '<span style="color:green;"> &#10004;</span> ';
+                  } else {                                     
+                      echo '<br /><div style="color:red">x WHMCS API Error: ' . $objData["errormessage"] . '</div>';
+                      continue;  // *** continue
+                  }
+                  
+                  // Change the username and password in the database
+                  echo '<br /><span style="color:black">&rArr; Setting the login & password for hosting...<br />';				
+                  
+                  $queryUpdateResult = Capsule::table('tblhosting')->where('id',$iProductIds)
+                                          ->update(array(
+                                            'username' => $_GET["client_login"],
+                                            'password' => $whmcsEncryptedPassword,
+                                          ));                
+              } 
+              else '<div style="color:red">&rArr; Note: Username & password are blank.</div>';  
+
+          } else {
+              echo '<span style="color:red">x WHMCS API Error: ' . $results['result'] . '<br />';
               exit; // # quit.
-          }                
+          }     
           
           // WHMCS API :: AcceptOrder
           // -----------------------------------------------------------------------------------------------------
                
           echo '<span style="color:black">&rArr; WHMCS API: AcceptOrder...<br />';
-                    
-          $iResult = $whmcsObj->acceptOrder($iOrderId);
-          $objData = $whmcsObj->getTransactionData();
-                                          
-          if ($iResult) { // operation was successful
+          
+          $AOResult = localAPI('AcceptOrder', array('orderid' => $iOrderId));
+                                                     
+          if ($AOResult['result'] == 'success') { // operation was successful
               echo '<span style="color:green">&#10004; Order was accepted!</span><br /><br />';
               echo '&rArr; <strong>Please <a href="clientshosting.php?userid=' . $_GET["clientid"] . '&id=' . $results["productids"] . '">go to product profile</a> and verify:<br />&bull; Payment Method<br />&bull; Pricing<br />&bull; Billing Cycle<br />&bull; Next Due Date</strong><br />';                                      
           } else {                          
               echo '<div style="color:red">x Order # [' . $iOrderId . '] was not accepted!</div><br />';
-              echo '<div style="color:red">x WHMCS API Error: ' . $objData["errormessage"] . '</div>';                                    
+              echo '<div style="color:red">x WHMCS API Error: ' . $AOResult["result"] . '</div>';                                    
           }
       
         break;
