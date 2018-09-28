@@ -35,10 +35,10 @@ Features
    * Ensure synchronicity between WHMCS and Plesk  
    * Interactively Suspend or Unsuspend Plesk client accounts
    * Ajax buttons to carry-out operations rapidly
-   * Find orphaned hosting accounts that are active in Plesk  <br /> ';      
-   * Synchronize hosting account status (suspended/active)<br />';
-   * Auto-locate owner of the hosting account through domain/e-mail<br />';
-   * Import, match and create accounts with invoices and e-mails<br />';
+   * Find orphaned hosting accounts that are active in Plesk   
+   * Synchronize hosting account status (suspended/active)
+   * Auto-locate owner of the hosting account through domain/e-mail
+   * Import, match and create accounts with invoices and e-mails
    * Open Source, Freeware
 
 
