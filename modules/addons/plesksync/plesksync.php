@@ -18,10 +18,10 @@ function plesksync_config()
 {
     return array(
         'name' => 'Plesk Sync for WHMCS', // Display name for your module
-        'description' => 'This module enables you to sync your client data from Plesk with WHMCS',
+        'description' => 'Plesk Sync allows you to import, control, create and synchronize client hosting accounts with your Plesk servers.',
         'author' => 'Websavers Inc.', // Module author name
         'language' => 'english', // Default language
-        'version' => '0.9', // Version number
+        'version' => '2.0b', // Version number
         'fields' => array(
             'accounts_per_page' => array(
                 'FriendlyName' => 'Accounts Per Page',
@@ -430,7 +430,7 @@ function plesksync_output($vars){
   /** Begin normal admin area output processing **/
   ?>
   
-  <img src="<?php echo $module_relpath; ?>/images/plesksync-icon.png" align="absmiddle"> <strong>Plesk Sync for WHMCS</strong><br /><br />
+  <img src="<?php echo $module_relpath; ?>/plesksync-icon.png" align="absmiddle"> <strong>Plesk Sync for WHMCS</strong><br /><br />
   <script><!-- Set vars -->
     var moduledir = "<?php echo $module_relpath; ?>";
     var modulelink = "<?php echo $modulelink; ?>";
@@ -442,7 +442,7 @@ function plesksync_output($vars){
     
   	// }}---------------------[MAIN() Default Page - Show active Plesk Servers]---------------------------------------------------------
 ?>
-	    <p>Plesk Sync is an addon module for WHMCS to import, control, create and synchronize client hosting accounts with your Parallel Plesk servers.</p>
+	    <p><?php echo $vars['description']; ?></p>
 	    <p>Accounts are color-coded, reports a diagnosis and resolution, contains statistics on disk space and traffic, detailed client profile information and command buttons to resolve.</p>
 	    <p>&rArr; Auto-detecting servers...</p>
 	    <h2>Plesk Servers</h2>

@@ -18,7 +18,7 @@ About
 -----
 
 Plesk Sync is an add-on module for WHMCS to import, control, create and synchronize client hosting
-accounts with your Parallel Plesk servers.
+accounts with your Plesk servers.
 
 Synchronize hosting account statuses between WHMCS & Plesk.  Finds orphaned hosting accounts that are active in Plesk, but not in billing. Attempts to locates the real owner of the hosting account through domain/e-mail.  Imports and creates new clients with invoiced hosting account, including password.
 
@@ -111,20 +111,22 @@ Reference
 
 [Plesk Panel](https://www.plesk.com "Plesk Control Panel") is the leading hosting automation control panel on the market. 
   
-Parallels Plesk Panel 9.2: API RPC Protocol Developer Guide:
-[http://download1.parallels.com/Plesk/PPP9/Doc/en-US/plesk-9.2-api-rpc/](http://download1.parallels.com/Plesk/PPP9/Doc/en-US/plesk-9.2-api-rpc/ "PLESK 9.2 RPC API")
-[http://download1.parallels.com/Plesk/PPP9/Doc/en-US/plesk-9.2-api-rpc-guide/33181.htm](http://download1.parallels.com/Plesk/PPP9/Doc/en-US/plesk-9.2-api-rpc-guide/33181.htm "XML PLESK API")
+Plesk Onyx XML API Protocol Developer Guide:
+[https://docs.plesk.com/en-US/onyx/api-rpc/about-xml-api.28709/](https://docs.plesk.com/en-US/onyx/api-rpc/about-xml-api.28709/")
+
+WHMCS API Developer Guide:
+[https://developers.whmcs.com/api/](https://developers.whmcs.com/api/)
 
 #### WHMCS API
 Utilizes the following functions:
-- [AddClient](http://wiki.whmcs.com/API:Add_Client "WHMCS API - Add Client") (ajaxCreateWHMCSAccount.php)
-- [AddOrder](http://wiki.whmcs.com/API:Add_Order "WHMCS API - Add Order") (ajaxCreateWHMCSOrder.php)
-- [EncryptPassword](http://wiki.whmcs.com/API:Encrypt_Password "WHMCS API - Encrypt Password") (ajaxCreateWHMCSOrder.php)
-- [AcceptOrder](http://wiki.whmcs.com/API:Accept_Order "WHMCS API - Accept Order") (ajaxCreateWHMCSOrder.php)
+- [AddClient](https://developers.whmcs.com/api-reference/addclient/)
+- [AddOrder](https://developers.whmcs.com/api-reference/addorder/)
+- [EncryptPassword](https://developers.whmcs.com/api-reference/encryptpassword/)
+- [AcceptOrder](https://developers.whmcs.com/api-reference/acceptorder/)
 
 #### PLESK RPC API
 Utilizes the following functions:
-- client-get (ajaxGetPleskAccountDetails.php, ajaxImportPleskAccount.php)
+- client-get (plesksync.class.php)
 - server-get_protos (plesksync.class.php)
 - domain-get (plesksync.class.php)
 
@@ -132,7 +134,8 @@ Utilizes the following functions:
 Release Log
 -----------
 
-   * v2.0b (Sept.27.2018) - complete refactoring of module code to work with WHMCS 7+
+   * v2.0b (Sept.27.2018) - complete refactoring of module code to work with WHMCS 7 + Plesk Onyx
+   ---
    * v1.0.1b (Sept.23.2010) - added newly created WhmcsApiClass (Whmcs.Api.class.php).  Added auto-detecting of API admin user, to avoid confusion in setup.
    * v1.0.0b (Sept.16.2010) - minor update: added better error exception handling.
    * v1.0.0b (Sept.12.2010) - first public release.
