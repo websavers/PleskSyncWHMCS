@@ -229,6 +229,8 @@ function plesksync_output($vars){
           
           $results = localAPI('AddClient', $values);
           
+          logModuleCall('plesksync', 'whmcsAddClient', print_r($values, true), print_r($results, true), $processedData = "", $replaceVars = "");
+          
           if ($results['result'] == 'success') {
             $iClientId = $results["clientid"];
             
@@ -321,7 +323,14 @@ function plesksync_output($vars){
                
           echo '<span style="color:black">&rArr; WHMCS API: AcceptOrder...<br />';
           
-          $AOValues = array('orderid' => $iOrderId);
+          $AOValues = array(
+            'orderid' => $iOrderId,
+            'autosetup' => false, //don't try to provision to server
+            'sendemail' => false, //don't send related emails
+          );
+          if (!$bNoEmail){
+            $AOValues['sendemail'] = true;
+          }
           $AOResult = localAPI('AcceptOrder', $AOValues);
           
           logModuleCall('plesksync', 'whmcsAcceptOrder', print_r($AOValues, true), print_r($AOResult, true), $processedData = "", $replaceVars = "");
@@ -519,12 +528,9 @@ function plesksync_output($vars){
 		$iEndNumber = ($iPageNumber + 1) * $iMaxResultsPerPage;
 
 		try {
-      echo '<a href="">[ Home ] : Plesk Server Summary</a><br /><br />';
-      echo '<div style="color:grey">&rArr; Connected to Plesk RPC API at ' . $strIp . ':8443/enterprise/control/agent.php...</div><br />';
-      echo '<img src="images/icons/products.png" align="absmiddle"> <span style="color:black;font-weight:bold;font-size:10pt">Plesk Server [' . $strIp . ']</span> <br /><br />';
-	   
       //Show Service Plans available
       $service_plans = pleskGetServicePlans($curl);
+      echo "<div style='float:right;width:40%;'>";
       echo "<h3>Service Plans Available</h3>";
       echo "<ul>";
       //$sp_map = array();
@@ -532,10 +538,14 @@ function plesksync_output($vars){
         echo "<li>{$plan->name}: {$plan->guid}</li>";
         //$sp_map[$plan->guid] = $plan->name;
       }
-      echo "</ul>";
+      echo "</ul></div>";
       
       //reset curl for next request
       $curl = curlInit($strIp, $_POST['login_name'], $_POST['passwd']);
+      
+      echo '<a href="">[ Home ] : Plesk Server Summary</a><br /><br />';
+      echo '<div style="color:grey">&rArr; Connected to Plesk RPC API at ' . $strIp . ':8443/enterprise/control/agent.php...</div><br />';
+      echo '<img src="images/icons/products.png" align="absmiddle"> <span style="color:black;font-weight:bold;font-size:10pt">Plesk Server [' . $strIp . ']</span> <br /><br />';
       
       if ($iPageNumber == 'all') {
 				echo "&rArr; Downloaded properties of all domains on server.<br />";
