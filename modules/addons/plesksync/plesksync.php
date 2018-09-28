@@ -86,7 +86,7 @@ function plesksync_output($vars){
       
       case 'GetServerStats':
         
-        $curl = curlInit($_GET['ip'], $_GET['l'], urldecode($_GET['p']), "on");
+        $curl = curlInit($_GET['ip'], $_GET['l'], urldecode($_GET['p']));
 
         try {
         try { 
@@ -126,15 +126,12 @@ function plesksync_output($vars){
         break;
       case 'GetPleskAccountDetails':
       
-          $curl = curlInit($_GET['ip'],  $_GET['l'], urldecode($_GET['p']), $_GET['secure']);
+          $curl = curlInit($_GET['ip'],  $_GET['l'], urldecode($_GET['p']));
 
           try {
             try {
-              
-                $response = sendRequest( $curl, createPacket('<packet><customer><get><filter><id>' . $_GET['cid'] . '</id></filter><dataset><gen_info/><stat/></dataset></get></customer></packet>') );
-                $responseXml = parseResponse($response);
-                checkResponse($responseXml);
-                $userNode = $responseXml->xpath('//*[name()="gen_info"]');
+                
+                $userNode = pleskGetCustomers($curl, 'id', $_GET['cid']);
                   
                 echo '<span style="font-size:8pt;color:black">';
                 
@@ -146,7 +143,7 @@ function plesksync_output($vars){
                 echo '&bull; Address:  <b>' . (string)$userNode[0]->address . '</b><br />';
                 echo '&bull; City: <b>' . (string)$userNode[0]->city . '</b><br />';
                 echo '&bull; State: <b>' . (string)$userNode[0]->state . '</b><br />';
-                echo '&bull; Postcode:  <b>' . (string)$userNode[0]->postcode . '</b><br />';
+                echo '&bull; Postcode:  <b>' . (string)$userNode[0]->pcode . '</b><br />';
                 echo '&bull; Country:  <b>' . (string)$userNode[0]->country . '</b><br />';
                 echo '&bull; Login: <b>' . (string)$userNode[0]->login . '</b><br />';      
                 echo '&bull; Password:  <b>' . (string)$userNode[0]->password . '</b>';     
@@ -176,7 +173,7 @@ function plesksync_output($vars){
         break;
       case 'ChangeStatusInPlesk':
       
-          $curl = curlInit($_GET['ip'], $_GET['l'], urldecode($_GET['p']), $_GET['secure']);
+          $curl = curlInit($_GET['ip'], $_GET['l'], urldecode($_GET['p']));
 
           try {
             try {
@@ -345,17 +342,12 @@ function plesksync_output($vars){
       
           $iDomainId  =  $_GET['did'];
 
-          $curl = curlInit($_GET['ip'],  $_GET['l'], urldecode($_GET['p']), $_GET['secure']);
+          $curl = curlInit($_GET['ip'],  $_GET['l'], urldecode($_GET['p']));
 
           try {		 
             try {
-                  
-                $strPacket = '<packet><client><get><filter><id>' . $iDomainId . '</id></filter><dataset><gen_info/><permissions/></dataset></get></client></packet>';
-                $response = sendRequest($curl, createPacket($strPacket));
-                $responseXml = parseResponse($response);
-                checkResponse($responseXml);
-                       
-                $userNode = $responseXml->xpath('//*[name()="gen_info"]');
+                
+                $userNode = pleskGetCustomers($curl, 'id', $iDomainId);
                 
                 // first, try to find this account through email address: this has to be done here
         
@@ -458,7 +450,7 @@ function plesksync_output($vars){
       <div class="tablebg"><table class="datatable" border="0" cellpadding="3" cellspacing="1" width="100%">
       <tbody><tr><th width="85">#</th><th>Server Name</th><th>Group</th><th width="95">Host (IP) </th><th width="100">Protocol</th><th width="220">Stats</th><th></th></tr>
 <?php
-  		$servers = Capsule::select("SELECT `tblservers`.name, `tblservers`.hostname, `tblservers`.ipaddress, `tblservers`.maxaccounts, `tblservers`.username, `tblservers`.password, `tblservers`.secure, `tblservergroups`.name AS `groupname` FROM `tblservers` LEFT JOIN `tblservergroupsrel` ON `tblservers`.id = `tblservergroupsrel`.serverid LEFT JOIN `tblservergroups` ON `tblservergroupsrel`.groupid = `tblservergroups`.id WHERE type = 'plesk' ");
+  		$servers = Capsule::select("SELECT `tblservers`.name, `tblservers`.hostname, `tblservers`.ipaddress, `tblservers`.maxaccounts, `tblservers`.username, `tblservers`.password, `tblservergroups`.name AS `groupname` FROM `tblservers` LEFT JOIN `tblservergroupsrel` ON `tblservers`.id = `tblservergroupsrel`.serverid LEFT JOIN `tblservergroups` ON `tblservergroupsrel`.groupid = `tblservergroups`.id WHERE type = 'plesk' ");
       
       $i = 0;
       $servers = json_decode(json_encode($servers), true); //convert from obj to array
@@ -475,7 +467,7 @@ function plesksync_output($vars){
   				// connect to each server and get the list of available protocols that it understands
   				try {
             $requestXml = createPacket('<packet><server><get_protos/></server></packet>');
-            $curl = curlInit($row['ipaddress'], $row['username'], decrypt($row['password']), $row['secure']);
+            $curl = curlInit($row['ipaddress'], $row['username'], decrypt($row['password']));
             $response = sendRequest($curl, $requestXml);
             $responseXml = parseResponse($response);
 
@@ -507,7 +499,7 @@ function plesksync_output($vars){
   		      echo 'onClick="getServerStats(\'serverinfo_output'.$i. '\',\'ip='.$row['ipaddress'].'&l='.$row['username'].'&p='.urlencode(decrypt($row['password'])).'\')"></div></td>';     
             echo '<td><form action="'.$modulelink.'" method="post">';	      
   		      echo '<input name="login_name" value="'.$row['username'].'" type="hidden"><input name="passwd" value="'.decrypt($row['password']).'" type="hidden">';
-  		      echo '<input name="ip" value="'.$row['ipaddress'].'" type="hidden"><input name="secure" value="'.$row['secure'].'" type="hidden">';
+  		      echo '<input name="ip" value="'.$row['ipaddress'].'" type="hidden">';
   		      echo '<input value="Browse Accounts..." type="submit"></form>'; 
   	        echo '</td>';
           }
@@ -521,7 +513,7 @@ function plesksync_output($vars){
 		
 		// ---------------------[MAIN() Process - Show domain accounts from selected server]---------------------------------------------------------	
 
-		$curl = curlInit($strIp, $_POST['login_name'], $_POST['passwd'], $_POST['secure']);
+		$curl = curlInit($strIp, $_POST['login_name'], $_POST['passwd']);
 
 		$iPageNumber = (isset($_POST['page']) ? $_POST['page'] : "0");
 		$iMaxResultsPerPage = $max_id_results_per_page;  			// # config.php
@@ -538,7 +530,7 @@ function plesksync_output($vars){
 				$response = sendRequest($curl, createAllDomainsDocument()->saveXML());
 		  } 
       else {
-				showNavigationButtons($iPageNumber, $strIp, $_POST['login_name'], $_POST['passwd'], $_POST['secure']);
+				showNavigationButtons($iPageNumber, $strIp, $_POST['login_name'], $_POST['passwd']);
 				echo '<div align="center" style="color:black">Domain Accounts with id (<strong>' . $iStartNumber . ' - ' . $iEndNumber . '</strong>)</div>';
 				$response = sendRequest($curl, createPagedDomainsDocument($iStartNumber,$iEndNumber) );
       }
@@ -594,7 +586,7 @@ function plesksync_output($vars){
         $bhasWHMCSDomainAccount = FALSE;
         $iCountMissingFromWHMCS++;
         $strDomainNotes = "&raquo; NO hosting for this domain in WHMCS";
-        $strSolutionText =  '<div id="createaccntOut' . $iCnt . '"> <input type="button" style="color:green;font-weight:bold" value="Verify & Import &raquo;"  onClick="ImportPleskAccount(\'createaccntOut'.$iCnt. '\',\'did=' . $iClientId  .  '&domain=' . $strDomainName . '&ip='.$strIp .'&l=' . $_POST['login_name'] .'&p='.urlencode($_POST['passwd']).'&secure='.$bSecure .'\')"></div>';
+        $strSolutionText =  '<div id="createaccntOut' . $iCnt . '"> <input type="button" style="color:green;font-weight:bold" value="Verify & Import &raquo;"  onClick="ImportPleskAccount(\'createaccntOut'.$iCnt. '\',\'did=' . $iClientId  .  '&domain=' . $strDomainName . '&ip='.$strIp .'&l=' . $_POST['login_name'] .'&p='.urlencode($_POST['passwd']).'\')"></div>';
 
         // search for domain name match in WHMCS (Plesk API does not return full users stats unless you request a single domain)
 				$domains = Capsule::select("SELECT *  from `tbldomains` WHERE `domain` = '$strDomainName' LIMIT 1");
@@ -646,7 +638,7 @@ function plesksync_output($vars){
       echo '<td style="font-size:8pt;white-space: nowrap"><center>';
       echo  'Plesk Id # '. $iClientId;
       echo '</center><br />';
-      echo '<div id="userinfo_output' . $iCnt . '"><center><input type="button" value="Details"  id="userinfobtn' .$iCnt. '" onClick="GetAccountDetailsPlesk(\'userinfo_output'.$iCnt. '\',\'cid=' . $iClientId  .  '&ip='.$strIp .'&l=' . $_POST['login_name'] . '&p='.urlencode($_POST['passwd']).'&secure='.$bSecure .'\')"></center></div></td>';
+      echo '<div id="userinfo_output' . $iCnt . '"><center><input type="button" value="Details"  id="userinfobtn' .$iCnt. '" onClick="GetAccountDetailsPlesk(\'userinfo_output'.$iCnt. '\',\'cid=' . $iClientId  .  '&ip='.$strIp .'&l=' . $_POST['login_name'] . '&p='.urlencode($_POST['passwd']).'\')"></center></div></td>';
 
       if (!$bFoundinWHCMS)        echo '<td style="font-size:8pt;white-space: nowrap;">' . $iWHMCSClientId . '</td>';   
       else echo '<td style="font-size:8pt;white-space: nowrap;"><a href="clientsdomains.php?id=' . $iWHMCSClientId . '" style="text-decoration: none;">' . $iWHMCSClientId . '</a></td>';
@@ -699,11 +691,11 @@ function plesksync_output($vars){
       } 
       else if ($row['domainstatus'] == "Suspended" && $iDomainStatus == 0) {    
         echo '<td style="font-size:8pt;color:black;white-space: nowrap">&raquo; Suspended in WHMCS, <strong>Active in Plesk</strong>.</td>';
-        echo '<td><div id="pleskSuspendOut' . $iCnt . '"> <input type="button" value="Plesk: `Suspend`"  id="pleskSuspendBtn' .$iCnt. '" style="color:#5c2de1" onClick="ChangeAccountStatusPlesk(\'pleskSuspendOut'.$iCnt. '\',\'cid=' . $iClientId  . '&did=' . $iDomainId  . '&secure=' . $row['secure'] . '&suspend=1&ip='.$strIp.'&l=' . $_POST['login_name'] .'&p='.urlencode($_POST['passwd']).'\')"></div></td>';
+        echo '<td><div id="pleskSuspendOut' . $iCnt . '"> <input type="button" value="Plesk: `Suspend`"  id="pleskSuspendBtn' .$iCnt. '" style="color:#5c2de1" onClick="ChangeAccountStatusPlesk(\'pleskSuspendOut'.$iCnt. '\',\'cid=' . $iClientId  . '&did=' . $iDomainId  . '&suspend=1&ip='.$strIp.'&l=' . $_POST['login_name'] .'&p='.urlencode($_POST['passwd']).'\')"></div></td>';
       } 
       else if ($row['domainstatus'] == "Active" && $iDomainStatus <> 0) {
         echo '<td style="font-size:8pt;color:black;white-space: nowrap">&raquo; Active in WHMCS, <strong>Suspended in Plesk</strong>.</td>'; 
-        echo '<td><div id="pleskUnsuspendOut' . $iCnt . '"> <input type="button" value="Plesk: `Unsuspend`"  id="pleskUnsuspendBtn' .$iCnt. '" style="color:#9f1fe1" onClick="ChangeAccountStatusPlesk(\'pleskUnsuspendOut'.$iCnt. '\',\'cid=' . $iClientId  . '&did=' . $iDomainId  . '&secure=' . $row['secure'] . '&suspend=0&ip='.$strIp.'&l=' . $_POST['login_name'] . '&p='.urlencode($_POST['passwd']).'\')"></div></td>';     
+        echo '<td><div id="pleskUnsuspendOut' . $iCnt . '"> <input type="button" value="Plesk: `Unsuspend`"  id="pleskUnsuspendBtn' .$iCnt. '" style="color:#9f1fe1" onClick="ChangeAccountStatusPlesk(\'pleskUnsuspendOut'.$iCnt. '\',\'cid=' . $iClientId  . '&did=' . $iDomainId . '&suspend=0&ip='.$strIp.'&l=' . $_POST['login_name'] . '&p='.urlencode($_POST['passwd']).'\')"></div></td>';     
       } 
       else{
         echo '<td></td><td style="font-size:8pt;color:black;">' . $strSolutionText. '</td>';
@@ -718,7 +710,7 @@ function plesksync_output($vars){
     if ($iCnt == 0) echo '<div align="center" style="padding-top:50px;padding-bottom:90px;color:red;font-weight:bold">( Sorry, there are no client domains accounts within this range... )</div><br />';
     else echo '<div style="color:black"><i>(<strong>' . $iCnt . '</strong> of <strong>' .  $iMaxResultsPerPage . '</strong>), client domain accounts found within this range.</i></div><br />';
       	  	
-    showNavigationButtons($iPageNumber, $_POST['ip'], $_POST['login_name'], $_POST['passwd'], $_POST['secure']);	
+    showNavigationButtons($iPageNumber, $_POST['ip'], $_POST['login_name'], $_POST['passwd']);	
        
 		 /*
 		 // collect some statistics  
@@ -755,22 +747,22 @@ function bytesToSize1024($bytes = 0, $precision = 2) {
 	return @round($bytes / pow(1024, ($i = floor(log($bytes, 1024)))), $precision).' '.$unit[$i];
 }
 // --------------------
-function getViewDomainsButton($ip, $login, $password, $secure, $button_text = 'Browse Accounts', $page = 0) {
+function getViewDomainsButton($ip, $login, $password, $button_text = 'Browse Accounts', $page = 0) {
 	
 	        $strHtml  = '<form action="'.$modulelink.'" method="post">';	      
 	        $strHtml .= '<input name="login_name" value="'.$login.'" type="hidden"><input name="passwd" value="'.urldecode($password).'" type="hidden">';
-	        $strHtml .= '<input name="ip" value="'.$ip.'" type="hidden"><input name="secure" value="'.$secure.'" type="hidden"><input name="page" value="' . $page . '" type="hidden">';
+	        $strHtml .= '<input name="ip" value="'.$ip.'" type="hidden"><input name="page" value="' . $page . '" type="hidden">';
 	        $strHtml .= '<input value="' . $button_text . '" type="submit"></form>';
 		
 		return $strHtml;
 }
 // --------------------
-function showNavigationButtons($page_number, $ip, $login, $password, $secure) {	
+function showNavigationButtons($page_number, $ip, $login, $password) {	
 			
 	echo '<table border="0" align="center" width="40%"><tr>';
-	if ($page_number != 0) echo '<td align="center">' . getViewDomainsButton($ip, $login, $password, $secure, '&laquo; Previous Page (' . $page_number . ')', ($page_number - 1) ) . '</td>';
+	if ($page_number != 0) echo '<td align="center">' . getViewDomainsButton($ip, $login, $password, '&laquo; Previous Page (' . $page_number . ')', ($page_number - 1) ) . '</td>';
 	echo '<td align="center" style="color:black;font-weight:bold">[ Page (' . ($page_number + 1) . ') ]</td>';
-	echo '<td align="center">' . getViewDomainsButton($ip, $login, $password, $secure, 'Next Page (' . ($page_number + 2) . ') &raquo;', ($page_number + 1) )  . '</td>';				
+	echo '<td align="center">' . getViewDomainsButton($ip, $login, $password, 'Next Page (' . ($page_number + 2) . ') &raquo;', ($page_number + 1) )  . '</td>';				
 	echo '</table><br />';
 		
 }

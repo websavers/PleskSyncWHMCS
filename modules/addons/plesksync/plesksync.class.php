@@ -5,6 +5,31 @@
 
 // ------------------------------------------------------------------------------------------------------------
 class ApiRequestException extends Exception {}
+  
+function pleskGetCustomers($curl, $filtertype, $ids){
+  
+  $strPacket = '<packet><customer><get><filter>';
+  
+  if (is_array($ids)){ //multiple
+    foreach ($ids as $id){
+      $id = (int) $id;
+      $strPacket .= "<$filtertype>$id</$filtertype>";
+    }
+  }
+  else{ //single
+    $ids = (int) $ids;
+    $strPacket .= "<$filtertype>$ids</$filtertype>";
+  }
+  //$strPacket .= '</filter><dataset><gen_info/><stat/></dataset></get></customer></packet>';
+  $strPacket .= '</filter><dataset><gen_info/></dataset></get></customer></packet>';
+  
+  $response = sendRequest($curl, createPacket($strPacket));
+  $responseXml = parseResponse($response);
+  checkResponse($responseXml);
+  
+  return $responseXml->xpath('//*[name()="gen_info"]');
+  
+}
 // ------------------------------------------------------------------------------------------------------------
 function createPagedDomainsDocument($iFrom, $iTo) {
 
@@ -61,18 +86,16 @@ function createAllDomainsDocument() {
       return $xmldoc;
 }
 // ------------------------------------------------------------------------------------------------------------
-function curlInit($host, $login, $password, $secure) {
-
-      if ($secure == "on") $strURLprefix = "https";
-      else $strURLprefix = "http";
+function curlInit($host, $login, $password) {
            
       $curl = curl_init();
 
-      curl_setopt($curl, CURLOPT_URL, $strURLprefix."://".$host.":8443/enterprise/control/agent.php");
+      curl_setopt($curl, CURLOPT_URL, "https://".$host.":8443/enterprise/control/agent.php");
       curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
       curl_setopt($curl, CURLOPT_POST,           true);
       curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
       curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
+      curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true); //302 is provided upon error. Need to follow it to get XML result.
       curl_setopt($curl, CURLOPT_HTTPHEADER, array("HTTP_AUTH_LOGIN: {$login}","HTTP_AUTH_PASSWD: {$password}","HTTP_PRETTY_PRINT: TRUE","Content-Type: text/xml"));
 
       return $curl;
@@ -81,7 +104,6 @@ function curlInit($host, $login, $password, $secure) {
 function sendRequest($curl, $packet) {
     
       curl_setopt($curl, CURLOPT_POSTFIELDS, $packet);
-      curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true); //302 is provided upon error. Need to follow it to get XML result.
 
       $result = curl_exec($curl);
 
@@ -101,36 +123,36 @@ function sendRequest($curl, $packet) {
 // ------------------------------------------------------------------------------------------------------------
 function parseResponse($response_string) {
 
-        if (isset($response_string)) {
-          
-          try{
-            $xml = new SimpleXMLElement($response_string);
-            if (!is_a($xml, 'SimpleXMLElement')) throw new ApiRequestException("Cannot parse server response: {$response_string}");
-            return $xml;
-          } catch (Exception $e) {
-            echo 'Caught exception while parsing XML: ',  $e->getMessage(), "\n";
-          }
-       
-         } 
-         else throw new ApiRequestException("Invalid server response: error communicating. parseResponse()");
+    if (isset($response_string)) {
+      
+      try{
+        $xml = new SimpleXMLElement($response_string);
+        if (!is_a($xml, 'SimpleXMLElement')) throw new ApiRequestException("Cannot parse server response: {$response_string}");
+        return $xml;
+      } catch (Exception $e) {
+        echo 'Caught exception while parsing XML: ',  $e->getMessage(), "\n";
+      }
+   
+     } 
+     else throw new ApiRequestException("No server response: error communicating with server. parseResponse()");
         
 }
 // ------------------------------------------------------------------------------------------------------------
 function checkResponse(SimpleXMLElement $response) {
 
-        if (isset($response)) {
-               
-             $resultNode = $response->xpath('//*[name()="system"]');    // login error and such return 'system' schema
-             if (!$resultNode) $resultNode = $response->xpath('//*[name()="result"]');
-             
-                if ((string)$resultNode[0]->status == "error") {
-               
-                      $strErrorText = (string)$resultNode[0]->errtext;
-                      $iErrorCode = (string)$resultNode[0]->errcode;
-                      echo '<span style="color:red">Plesk API returned error: '.$iErrorCode. ' - '. $strErrorText;
-                }
-                
-        } else  throw new ApiRequestException("Invalid server response: checkResponse()");
+    if (isset($response)) {
+         
+      $resultNode = $response->xpath('//*[name()="system"]');    // login error and such return 'system' schema
+      if (!$resultNode) $resultNode = $response->xpath('//*[name()="result"]');
+       
+      if ((string)$resultNode[0]->status == "error") {
+     
+            $strErrorText = (string)$resultNode[0]->errtext;
+            $iErrorCode = (string)$resultNode[0]->errcode;
+            echo '<span style="color:red">Plesk API returned error: '.$iErrorCode. ' - '. $strErrorText;
+      }
+            
+    } else  throw new ApiRequestException("Invalid server response: checkResponse()");
  
 }
 // ------------------------------------------------------------------------------------------------------------
