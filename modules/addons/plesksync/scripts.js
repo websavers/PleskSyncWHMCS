@@ -1,7 +1,8 @@
 function getServerStats(outputtag, data) {
   
-  $('#' + outputtag).html("<img src='" + moduledir + "/images/wait_details.gif'>");		
-    
+  //$('#' + outputtag).html("<img src='" + moduledir + "/images/wait_details.gif'>");		
+  $('#' + outputtag).html('<i class="fa fa-circle-o-notch fa-spin"></i>');		
+
   $.ajax({
     method: 'get',
     url: modulelink + '&ps_action=GetServerStats',
@@ -16,7 +17,7 @@ function getServerStats(outputtag, data) {
 
 function ChangeAccountStatusPlesk(outputtag, data) {
 
-  $('#' + outputtag).html("<img src='" + moduledir + "/images/wait_details.gif'>");		        
+  $('#' + outputtag).html('<i class="fa fa-circle-o-notch fa-spin"></i>');		        
         
   $.ajax({
     method: 'get',
@@ -32,7 +33,7 @@ function ChangeAccountStatusPlesk(outputtag, data) {
 
 function GetAccountDetailsPlesk(outputtag, data) {
 
-  $('#' + outputtag).html("<img src='" + moduledir + "/images/wait_details.gif'>");    
+  $('#' + outputtag).html('<i class="fa fa-circle-o-notch fa-spin"></i>');   
   
   $.ajax({
     method: 'get',
@@ -48,7 +49,7 @@ function GetAccountDetailsPlesk(outputtag, data) {
 
 function ImportPleskAccount(outputtag, data) {
   
-  $('#' + outputtag).html("<img src='" + moduledir + "/images/wait_import.gif'>");
+  $('#' + outputtag).html('<i class="fa fa-circle-o-notch fa-spin"></i>');
 
   $.ajax({
     method: 'get',
@@ -78,7 +79,7 @@ function CreateWHMCSAccount(outputtag, data, first, last, company, email, phone,
     var strPassword  = $('#' + password).val();
     var bSendemail   = $('#' + sendemail).attr('checked');
          
-    $('#' + outputtag).html("<img src='" + moduledir + "/images/wait_import.gif'>");
+    $('#' + outputtag).html('<i class="fa fa-circle-o-notch fa-spin"></i>');
      
     $.ajax({
       method: 'get',
@@ -99,7 +100,7 @@ function CreateWHMCSOrder(outputtag, data, packageid, createinvoice, sendemail) 
     var bSendemail      = $('#' + sendemail).attr('checked');
     var bCreateInvoice  = $('#' + createinvoice).attr('checked');
 
-    $('#' + outputtag).html("<img src='" + moduledir + "/images/wait_import.gif'>");
+    $('#' + outputtag).html('<i class="fa fa-circle-o-notch fa-spin"></i>');
      
     $.ajax({
       method: 'get',
