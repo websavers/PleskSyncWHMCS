@@ -81,6 +81,7 @@ function curlInit($host, $login, $password, $secure) {
 function sendRequest($curl, $packet) {
     
       curl_setopt($curl, CURLOPT_POSTFIELDS, $packet);
+      curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true); //302 is provided upon error. Need to follow it to get XML result.
 
       $result = curl_exec($curl);
 
@@ -101,14 +102,17 @@ function sendRequest($curl, $packet) {
 function parseResponse($response_string) {
 
         if (isset($response_string)) {
-              
-             $xml = new SimpleXMLElement($response_string);
+          
+          try{
+            $xml = new SimpleXMLElement($response_string);
+            if (!is_a($xml, 'SimpleXMLElement')) throw new ApiRequestException("Cannot parse server response: {$response_string}");
+            return $xml;
+          } catch (Exception $e) {
+            echo 'Caught exception while parsing XML: ',  $e->getMessage(), "\n";
+          }
        
-             if (!is_a($xml, 'SimpleXMLElement')) throw new ApiRequestException("Cannot parse server response: {$response_string}");
-       
-             return $xml;
-       
-         } else  throw new ApiRequestException("Invalid server response: error communicating. parseResponse()");
+         } 
+         else throw new ApiRequestException("Invalid server response: error communicating. parseResponse()");
         
 }
 // ------------------------------------------------------------------------------------------------------------
