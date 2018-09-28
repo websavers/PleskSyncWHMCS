@@ -6,6 +6,16 @@
 // ------------------------------------------------------------------------------------------------------------
 class ApiRequestException extends Exception {}
   
+function pleskGetServicePlans($curl){
+  $strPacket = '<packet><service-plan><get><filter/></get></service-plan></packet>';
+  
+  $response = sendRequest($curl, createPacket($strPacket));
+  $responseXml = parseResponse($response);
+  checkResponse($responseXml);
+  
+  return $responseXml->xpath('//*[name()="result"]');
+}
+  
 function pleskGetCustomers($curl, $filtertype, $ids){
   
   $strPacket = '<packet><customer><get><filter>';
@@ -39,7 +49,7 @@ function createPagedDomainsDocument($iFrom, $iTo) {
             $strPacket .= '<id>'.$i++.'</id>';   
         }
         //$strPacket .= '</filter><dataset><user/><gen_info/><stat/></dataset></get></webspace></packet>';
-        $strPacket .= '</filter><dataset><gen_info/><stat/></dataset></get></webspace></packet>';
+        $strPacket .= '</filter><dataset><gen_info/><stat/><subscriptions/></dataset></get></webspace></packet>';
 
 return createPacket($strPacket);
 }
@@ -81,6 +91,7 @@ function createAllDomainsDocument() {
       //$dataset->appendChild($xmldoc->createElement('user'));
       $dataset->appendChild($xmldoc->createElement('gen_info'));
       $dataset->appendChild($xmldoc->createElement('stat'));
+      $dataset->appendChild($xmldoc->createElement('subscriptions'));
       
     
       return $xmldoc;

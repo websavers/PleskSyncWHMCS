@@ -30,21 +30,14 @@ function plesksync_config()
                 'Default' => '100',
                 'Description' => 'Amount of accounts it searches for on each page',
             ),
-            'whmcs_api_url' => array(
-                'FriendlyName' => 'WHMCS API URL',
-                'Type' => 'text',
-                'Size' => '100',
-                'Default' => '../../../includes/api.php',
-                'Description' => 'If you have moved the API php file, change the location here.',
-            ),
             // the yesno field type displays a single checkbox option
             'whmcs_addorder_payment' => array(
                 'FriendlyName' => 'Mark Order as Paid By',
                 'Type' => 'dropdown',
 								'Options' => array(
-										'option1' => 'paypal',
-										'option2' => 'creditcard',
-										'option3' => 'manual',
+                    'mailin' => 'Mail In',
+										'paypal' => 'PayPal',
+										'creditcard' => 'Credit Card',
 								),
                 'Description' => 'When creating a matching order, use this payment type. Affects renewals',
             ),
@@ -53,11 +46,11 @@ function plesksync_config()
                 'FriendlyName' => 'Default Billing Cycle when creating orders',
                 'Type' => 'dropdown',
                 'Options' => array(
-                    'option1' => 'Monthly',
-                    'option2' => 'Quarterly',
-                    'option3' => 'Annually',
-										'option4' => 'Biennially',
-										'option5' => 'Triennially',
+                    'monthly'     => 'Monthly',
+                    'quarterly'   => 'Quarterly',
+                    'annually'    => 'Annually',
+										'biennially'  => 'Biennially',
+										'triennially' => 'Triennially',
                 ),
                 'Description' => 'This billing cycle will be used when creating orders.',
             ),
@@ -69,7 +62,6 @@ function plesksync_output($vars){
 	
 	// Get module configuration parameters
 	$max_id_results_per_page 			= $vars['accounts_per_page'];
-	$whmcs_api_url 								= $vars['whmcs_api_url'];
 	$whmcs_addorder_payment 			= $vars['whmcs_addorder_payment'];
 	$whmcs_addorder_billingcycle 	= $vars['whmcs_addorder_billingcycle'];
   $modulelink                   = $vars['modulelink']; //built in
@@ -259,10 +251,10 @@ function plesksync_output($vars){
           
           $values = array(
               'clientid'      => $_GET["clientid"],
-              'paymentmethod' => $whmcs_addorder_payment, //FIX
+              'paymentmethod' => $whmcs_addorder_payment,
               'pid'           => $_GET["packageid"],
               'domain'        => $_GET["domain"],
-              'billingcycle'  => $whmcs_addorder_billingcycle, //FIX
+              'billingcycle'  => $whmcs_addorder_billingcycle,
               'noinvoice'     => $bNoInvoice,
               'noinvoiceemail' => $bNoEmail,
           );
@@ -272,6 +264,8 @@ function plesksync_output($vars){
           }
           
           $results = localAPI('AddOrder', $values);
+          
+          logModuleCall('plesksync', 'whmcsAddOrder', print_r($values, true), print_r($results, true), $processedData = "", $replaceVars = "");
           
           if ($results['result'] == 'success') {
             
@@ -327,7 +321,10 @@ function plesksync_output($vars){
                
           echo '<span style="color:black">&rArr; WHMCS API: AcceptOrder...<br />';
           
-          $AOResult = localAPI('AcceptOrder', array('orderid' => $iOrderId));
+          $AOValues = array('orderid' => $iOrderId);
+          $AOResult = localAPI('AcceptOrder', $AOValues);
+          
+          logModuleCall('plesksync', 'whmcsAcceptOrder', print_r($AOValues, true), print_r($AOResult, true), $processedData = "", $replaceVars = "");
                                                      
           if ($AOResult['result'] == 'success') { // operation was successful
               echo '<span style="color:green">&#10004; Order was accepted!</span><br /><br />';
@@ -351,7 +348,7 @@ function plesksync_output($vars){
                 
                 // first, try to find this account through email address: this has to be done here
         
-                if ($strEmail = (string)$userNode[0]->email) {			
+                if ($strEmail = (string)$userNode[0]->email) {	//Existing customer in WHMCS		
 
                   $clients = Capsule::select("SELECT * FROM `tblclients` WHERE `email` = '" .  $strEmail ."'");
                   $row = json_decode(json_encode($clients), true); //convert from obj to array
@@ -366,7 +363,7 @@ function plesksync_output($vars){
                     
                         echo '<strong>Choose Package:</strong> <select name="packageid' . $iDomainId . '" id="packageid' . $iDomainId . '" style="font-size:7pt;color:black;">';
                         
-                        // get list of packages
+                        // Get list of WHMCS packages
                         $resultProducts = Capsule::select("SELECT name, id FROM `tblproducts` WHERE `servertype` = 'plesk' ORDER BY `name` ASC");
                         $resultProducts = json_decode(json_encode($resultProducts), true); //convert from obj to array
                         foreach($resultProducts as $product){ 
@@ -386,8 +383,8 @@ function plesksync_output($vars){
                   }
                   
                 }
-                    
-                // show form to add a new client in whmcs
+                
+                // No existing customer in WHMCS, so show form to add a new client
                 $strFirst = (string)$userNode[0]->pname;
                 $strFirst = substr($strFirst,0,strpos($strFirst, " ")); 
                 $strLast = (string)$userNode[0]->pname;
@@ -484,7 +481,6 @@ function plesksync_output($vars){
 			      else{ 
               echo '<span style="color:green;font-size:8pt"> &#10004;</span>';  
             }
-            logModuleCall('plesksync', 'pleskGetProtocol', (string)$requestXml, (string)$responseXml, $info, $replaceVars = "");
   				} 
           catch (Exception $e) {
 			      echo '<span style="color:red;font-size:7pt"> x</span></td><td style="color:red;"><i>' . $e . '</i></td>';
@@ -527,6 +523,20 @@ function plesksync_output($vars){
       echo '<div style="color:grey">&rArr; Connected to Plesk RPC API at ' . $strIp . ':8443/enterprise/control/agent.php...</div><br />';
       echo '<img src="images/icons/products.png" align="absmiddle"> <span style="color:black;font-weight:bold;font-size:10pt">Plesk Server [' . $strIp . ']</span> <br /><br />';
 	   
+      //Show Service Plans available
+      $service_plans = pleskGetServicePlans($curl);
+      echo "<h3>Service Plans Available</h3>";
+      echo "<ul>";
+      //$sp_map = array();
+      foreach($service_plans as $plan){
+        echo "<li>{$plan->name}: {$plan->guid}</li>";
+        //$sp_map[$plan->guid] = $plan->name;
+      }
+      echo "</ul>";
+      
+      //reset curl for next request
+      $curl = curlInit($strIp, $_POST['login_name'], $_POST['passwd']);
+      
       if ($iPageNumber == 'all') {
 				echo "&rArr; Downloaded properties of all domains on server.<br />";
 				$response = sendRequest($curl, createAllDomainsDocument()->saveXML());
@@ -607,13 +617,13 @@ function plesksync_output($vars){
 						$strSolutionText = '<div id="addorderOut' . $iCnt . '">';
 						$strSolutionText .= '<strong>Choose Package:</strong> <select name="packageid" id="packageid' . $iCnt. '" style="font-size:7pt;color:black;">';
 						
-						// get list of packages
+						// Get list of WHMCS packages
 						$packages = Capsule::select("SELECT name, id FROM `tblproducts` WHERE `servertype` = 'plesk' ORDER BY `name` ASC");
             $packages = json_decode(json_encode($packages), true); //convert from obj to array
 						foreach($packages as $rowProducts)  $strSolutionText .= '<option value="' . $rowProducts['id'] . '">' . $rowProducts['name'] . '</option>';
 											      
-						$strSolutionText .= '</select><br /><br /><input type="checkbox" id="createinvoice' . $iCnt. '" name="createinvoice' . $iCnt. '" style="font-size:6pt;color:black;"><label for="createinvoice' . $iCnt. '">Generate invoice?</label><br />';   // checked="checked"
-						$strSolutionText .= '<br /><input type="checkbox" id="sendemail' . $iCnt. '" name="sendemail' . $iCnt. '" style="font-size:6pt;color:black;"><label for="sendemail' . $iCnt. '">Send Order confirmation e-mail?</label><br />';  
+						$strSolutionText .= '</select><br /><br /><input type="checkbox" id="createinvoice' . $iCnt. '" name="createinvoice' . $iCnt. '" style="font-size:6pt;color:black;"> <label for="createinvoice' . $iCnt. '">Generate invoice?</label><br />';   // checked="checked"
+						$strSolutionText .= '<br /><input type="checkbox" id="sendemail' . $iCnt. '" name="sendemail' . $iCnt. '" style="font-size:6pt;color:black;"> <label for="sendemail' . $iCnt. '">Send order confirmation e-mail?</label><br />';  
 							
 						$strSolutionText .= '<br /><center><input type="button" value="Attach Order to Client #'.$iWHMCSClientId.'"  id="addorderOut' . $iCnt. '" onClick="CreateWHMCSOrder(\'addorderOut'.$iCnt. '\',\'clientid=' . $iWHMCSClientId;
 						$strSolutionText .= '&domain=' . $strDomainName . '\',\'packageid'.$iCnt. '\',\'createinvoice'.$iCnt. '\',\'sendemail'.$iCnt. '\')"></center></div>';
@@ -681,6 +691,7 @@ function plesksync_output($vars){
       echo '&bull; Disk Space: ' . bytesToSize1024($resultNode->data->gen_info->real_size) . '<br />';    
       echo '&bull; Traffic Today: ' . bytesToSize1024($resultNode->data->stat->traffic) . '<br />';
       echo '&bull; Traffic Yesterday: ' . bytesToSize1024($resultNode->data->stat->traffic_prevday) . '<br />';
+      echo '&bull; Service Plan ID: ' . $resultNode->data->subscriptions->subscription->plan->{'plan-guid'} . '<br />';
       //echo '&bull; Active Domains: '. (string)$resultNode->data->stat->active_domains . '<br />';
       //echo '&bull; Sub-Domains: '. (string)$resultNode->data->stat->subdomains . '<br />';      
       //echo '&bull; Disk Space: ' . bytesToSize1024($resultNode->data->stat->disk_space) . '<br />';     
