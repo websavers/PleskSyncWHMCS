@@ -392,13 +392,15 @@ function plesksync_output($vars){
                 $strFirst = substr($strFirst,0,strpos($strFirst, " ")); 
                 $strLast = (string)$userNode[0]->pname;
                 $strLast = substr($strLast,strpos($strLast, " ")+1,strrpos($strLast, " "));
-                
+                $strPhone = (string)$userNode[0]->phone;
+                if ($strPhone[0] == "1") $strPhone = substr($strPhone, 1); //strip leading 1
+;                
                 echo '<div id="createaccount_output' . $iDomainId . '"><span style="font-size:8pt;color:black"> ';
                 
                 echo 'First: <input type="text" style="font-size:7pt;color:black;"  id="pleskFirst' . $iDomainId  . '" size="21" value="' . ucfirst($strFirst) . '"/>' . ' <br />';
                 echo 'Last: <input type="text" style="font-size:7pt;color:black;"  id="pleskLast' . $iDomainId  . '" size="21" value="' . $strLast . '"/>' . ' <br />';			    
                 echo 'Company: <input type="text" style="font-size:7pt;color:black;"  id="pleskCompany' . $iDomainId  . '" size="21" value="' . (string)$userNode[0]->cname . '"/>' . ' <br />';
-                echo 'Phone: <input type="text" style="font-size:7pt;color:black;"  id="pleskPhone' . $iDomainId  . '" size="10" value="' . (string)$userNode[0]->phone . '"/>' . ' <br />';		
+                echo 'Phone: <input type="text" style="font-size:7pt;color:black;"  id="pleskPhone' . $iDomainId  . '" size="10" value="' . $strPhone . '"/>' . ' <br />';		
                 echo 'E-mail: <input type="text" style="font-size:7pt;color:black;" id="pleskEmail' . $iDomainId  . '" size="20" value="' . (string)$userNode[0]->email . '"/>' . ' <br />';
                 echo 'Address:  <input type="text" style="font-size:7pt;color:black;" id="pleskAddress' . $iDomainId  . '" size="20" value="' . (string)$userNode[0]->address . '"/>' . ' <br />';
                 echo 'City: <input type="text" style="font-size:7pt;color:black;" id="pleskCity' . $iDomainId  . '" size="12" value="' . (string)$userNode[0]->city . '"/>' . ' <br />';
