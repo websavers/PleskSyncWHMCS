@@ -32,18 +32,18 @@ function plesksync_config()
             ),
             // the yesno field type displays a single checkbox option
             'whmcs_addorder_payment' => array(
-                'FriendlyName' => 'Mark Order as Paid By',
+                'FriendlyName' => 'Mark Order As Paid By',
                 'Type' => 'dropdown',
 								'Options' => array(
                     'mailin' => 'Mail In',
 										'paypal' => 'PayPal',
 										'creditcard' => 'Credit Card',
 								),
-                'Description' => 'When creating a matching order, use this payment type. Affects renewals',
+                'Description' => 'When creating a matching order, use this payment type. Affects renewals. Mail In is the default in WHMCS',
             ),
             // the dropdown field type renders a select menu of options
             'whmcs_addorder_billingcycle' => array(
-                'FriendlyName' => 'Default Billing Cycle when creating orders',
+                'FriendlyName' => 'Default Billing Cycle',
                 'Type' => 'dropdown',
                 'Options' => array(
                     'monthly'     => 'Monthly',
