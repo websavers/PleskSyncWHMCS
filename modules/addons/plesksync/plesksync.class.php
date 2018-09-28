@@ -8,12 +8,13 @@ class ApiRequestException extends Exception {}
 // ------------------------------------------------------------------------------------------------------------
 function createSomeDomainsDocument($iFrom, $iTo) {
 
-        $strPacket = '<packet><domain><get><filter>';
+        $strPacket = '<packet><webspace><get><filter>';
         $i = $iFrom;
         while ($i <= $iTo) {
             $strPacket .= '<id>'.$i++.'</id>';   
         }
-        $strPacket .= '</filter><dataset><user/><gen_info/><stat/></dataset></get></domain></packet>';
+        //$strPacket .= '</filter><dataset><user/><gen_info/><stat/></dataset></get></webspace></packet>';
+        $strPacket .= '</filter><dataset><gen_info/><stat/></dataset></get></webspace></packet>';
         
         $xmlDomDoc = new DomDocument('1.0', 'UTF-8');
         $xmlDomDoc->formatOutput = true;
@@ -41,24 +42,24 @@ function createAllDomainsDocument() {
       $packet = $xmldoc->createElement('packet');
       $xmldoc->appendChild($packet);
 
-      // <packet/domain>
-      $domain = $xmldoc->createElement('domain');
-      $packet->appendChild($domain);
+      // <packet/webspace>
+      $webspace = $xmldoc->createElement('webspace');
+      $packet->appendChild($webspace);
 
-      // <packet/domain/get>
+      // <packet/webspace/get>
       $get = $xmldoc->createElement('get');
-      $domain->appendChild($get);
+      $webspace->appendChild($get);
 
-      // <packet/domain/get/filter>
+      // <packet/webspace/get/filter>
       $filter = $xmldoc->createElement('filter');  
       $get->appendChild($filter);
 
-      // <packet/domain/get/dataset>
+      // <packet/webspace/get/dataset>
       $dataset = $xmldoc->createElement('dataset');
       $get->appendChild($dataset);
 
       // dataset elements
-      $dataset->appendChild($xmldoc->createElement('user'));
+      //$dataset->appendChild($xmldoc->createElement('user'));
       $dataset->appendChild($xmldoc->createElement('gen_info'));
       $dataset->appendChild($xmldoc->createElement('stat'));
       

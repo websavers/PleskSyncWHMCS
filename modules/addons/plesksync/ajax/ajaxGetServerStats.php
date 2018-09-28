@@ -18,7 +18,7 @@ function bytesToSize1024($bytes = 0, $precision = 2) {
 function createServerInfoDocument() {
 
         // Full list of variables returned here: http://download1.parallels.com/Plesk/PPP9/Doc/en-US/plesk-9.2-api-rpc/40174.htm        
-        $strPacket = '<packet version="1.4.1.2"><server><get><stat/></get></server></packet>';
+        $strPacket = '<packet><server><get><stat/></get></server></packet>';
 
         $xmlDomDoc = new DomDocument('1.0', 'UTF-8');
         $xmlDomDoc->formatOutput = true;

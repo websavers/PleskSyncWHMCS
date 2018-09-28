@@ -121,7 +121,7 @@ function plesksync_output($vars){
 
             echo  $strServerProtocolVersion = (string)$info[0];
 			      
-			      if ($strServerProtocolVersion < "1.4.1.2"){
+			      if ($strServerProtocolVersion < "1.6.0.0"){
               echo '<span style="color:red;font-size:7pt"> x</span></td><td style="color:red;"><i>Version not supported</i></td>';
               $error = true;
             }

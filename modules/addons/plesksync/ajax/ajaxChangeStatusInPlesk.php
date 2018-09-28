@@ -18,7 +18,7 @@ function CreateXMLPacketToSend($client_id, $domain_id, $suspend = 0) {
       if ($suspend == "1") echo '&rArr; Sent command to <i>suspend</i> the status of domain.<br />';
       else echo '&rArr; Sent command to <i>unsuspend</i> the status of domain.<br />';
       
-       $strPacket = '<packet version="1.4.2.0">';
+       $strPacket = '<packet>';
        $strPacket .= '<client><set><filter><id>' . $client_id . '</id></filter><values><gen_info><status>' . $client_status . '</status></gen_info></values></set></client>';
        $strPacket .= '<domain><set><filter><id>' . $domain_id . '</id></filter><values><gen_setup><status>' . $domain_status . '</status></gen_setup></values></set></domain>';
        $strPacket .= '</packet>';      

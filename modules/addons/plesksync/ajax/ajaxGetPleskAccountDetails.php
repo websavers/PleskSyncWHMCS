@@ -17,7 +17,7 @@ function bytesToSize1024($bytes = 0, $precision = 2) {
 // ------------------------------------------------------------------------------------------------------------
 function CreateXMLPacketToSend($domain_id) {
 
-      $strPacket = '<packet version="1.4.1.2">';
+      $strPacket = '<packet>';
       $strPacket .= '<client><get><filter><id>' . $domain_id . '</id></filter><dataset><gen_info/><permissions/></dataset></get></client></packet>';
  
       $xmlDomDoc = new DomDocument('1.0', 'UTF-8');
