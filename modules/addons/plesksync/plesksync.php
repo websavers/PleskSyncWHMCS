@@ -347,7 +347,8 @@ function plesksync_output($vars){
       case 'ImportPleskAccount':
       
           $iDomainId  =  $_GET['did'];
-
+          $serviceplan_id = $_GET['sid'];
+          
           $curl = curlInit($_GET['ip'],  $_GET['l'], urldecode($_GET['p']));
 
           try {		 
@@ -355,9 +356,8 @@ function plesksync_output($vars){
                 
                 $userNode = pleskGetCustomers($curl, 'id', $iDomainId);
                 
-                // first, try to find this account through email address: this has to be done here
-        
-                if ($strEmail = (string)$userNode[0]->email) {	//Existing customer in WHMCS		
+                // check if existing customer in WHMCS by email address
+                if ($strEmail = (string)$userNode[0]->email) {	
 
                   $clients = Capsule::select("SELECT * FROM `tblclients` WHERE `email` = '" .  $strEmail ."'");
                   $row = json_decode(json_encode($clients), true); //convert from obj to array
@@ -368,15 +368,22 @@ function plesksync_output($vars){
                         echo '<div id="addorderimportOut' .  $iDomainId  . '">';
                         echo '<span style="color:green;font-weight:bold;font-size:8pt;">&#10004; User already exists in WHMCS!</span><br /><br />';
                         echo '<div style="color:black;font-size:7pt">&bull; ' .  $strEmail .'<br />&bull; <a href="clientssummary.php?userid=' . $row['id'] . '" target="_blank">'. utf8_decode($row['firstname']) . ' '. utf8_decode($row['lastname']) . '</a><br />&bull; Id: #' . $row['id'] . '</div><br />';
-                
                     
-                        echo '<strong>Choose Package:</strong> <select name="packageid' . $iDomainId . '" id="packageid' . $iDomainId . '" style="font-size:7pt;color:black;">';
+                        //Find which Plesk service plan (name) is used by this subscription
+                        $plesk_service_plan = "";
+                        $service_plans = pleskGetServicePlans(curlInit($_GET['ip'],  $_GET['l'], urldecode($_GET['p'])));
+                        foreach($service_plans as $thisplan){
+                          if ($serviceplan_id == $thisplan->guid){
+                            $plesk_service_plan = $thisplan->name;
+                            break;
+                          }
+                        }
                         
+                        echo '<strong>Choose Package:</strong> <select name="packageid' . $iDomainId . '" id="packageid' . $iDomainId . '" style="font-size:7pt;color:black;">';
                         // Get list of WHMCS packages
-                        $resultProducts = Capsule::select("SELECT name, id FROM `tblproducts` WHERE `servertype` = 'plesk' ORDER BY `name` ASC");
-                        $resultProducts = json_decode(json_encode($resultProducts), true); //convert from obj to array
-                        foreach($resultProducts as $product){ 
-                          echo '<option value="' . $product['id'] . '">' . $product['name'] . '</option>';
+                        foreach(Capsule::table('tblproducts')->select(array('name','id'))->where('servertype','plesk')->orderBy('name', 'asc')->get() as $product){ 
+                          $prod_selected = ($product->name == $plesk_service_plan)? 'selected="selected" style="color:green;"':'';
+                          echo "<option value='{$product->id}' $prod_selected>{$product->name}</option>";
                         }
             
                         echo '</select><br /><br /><input type="checkbox" id="createinvoice' . $iDomainId . '" name="createinvoice' . $iDomainId . '" style="font-size:6pt;color:black;"><label for="createinvoice' . $iDomainId . '">Generate invoice?</label><br />';   // checked="checked"
@@ -533,10 +540,8 @@ function plesksync_output($vars){
       echo "<div style='float:right;width:40%;'>";
       echo "<h3>Service Plans Available</h3>";
       echo "<ul>";
-      //$sp_map = array();
       foreach($service_plans as $plan){
-        echo "<li>{$plan->name}: {$plan->guid}</li>";
-        //$sp_map[$plan->guid] = $plan->name;
+        echo "<li><strong>{$plan->name}</strong>: {$plan->guid}</li>";
       }
       echo "</ul></div>";
       
@@ -587,6 +592,7 @@ function plesksync_output($vars){
       $iDomainStatus = (string)$resultNode->data->gen_info->status;   /// INCORRECT!
       $iAccountStatus = (string)$resultNode->data->gen_info->status;  // 0 = active, 2 = suspended (lack of payment?), 66 = suspended (over limit: disk/bandwidth)
       $strSolutionText = "";
+      $service_plan_id = $resultNode->data->subscriptions->subscription->plan->{'plan-guid'};
       
       //print($strDomainName); ///// DEBUG: Domain Name
          
@@ -608,12 +614,11 @@ function plesksync_output($vars){
         $bhasWHMCSDomainAccount = FALSE;
         $iCountMissingFromWHMCS++;
         $strDomainNotes = "&raquo; NO hosting for this domain in WHMCS";
-        $strSolutionText =  '<div id="createaccntOut' . $iCnt . '"> <input type="button" style="color:green;font-weight:bold" value="Verify & Import &raquo;"  onClick="ImportPleskAccount(\'createaccntOut'.$iCnt. '\',\'did=' . $iClientId  .  '&domain=' . $strDomainName . '&ip='.$strIp .'&l=' . $_POST['login_name'] .'&p='.urlencode($_POST['passwd']).'\')"></div>';
+        $strSolutionText =  '<div id="createaccntOut' . $iCnt . '"> <input type="button" style="color:green;font-weight:bold" value="Verify & Import &raquo;"  onClick="ImportPleskAccount(\'createaccntOut'.$iCnt. '\',\'did=' . $iClientId  .  '&domain=' . $strDomainName . '&ip='.$strIp . '&l='.$_POST['login_name'] . '&p='.urlencode($_POST['passwd']) . '&sid='.urlencode($service_plan_id) . '\')"></div>';
 
         // search for domain name match in WHMCS (Plesk API does not return full users stats unless you request a single domain)
 				$domains = Capsule::select("SELECT *  from `tbldomains` WHERE `domain` = '$strDomainName' LIMIT 1");
         $rowDomain = json_decode(json_encode($domains), true); //convert from obj to array
-				//$rowDomain = $domains[0];
 			  
         //print_r($rowDomain); ///DEBUG
         
@@ -643,7 +648,7 @@ function plesksync_output($vars){
                     
       } 
       
-      if (!$bFoundinWHCMS && !$bhasWHMCSDomainAccount) echo '<tr style="background-color: #fbb8b8;">';
+      if (!$bFoundinWHCMS && !$bhasWHMCSDomainAccount) echo '<tr style="background-color: #fbb8b8;border-top:1px solid red;">';
       else if (!$bFoundinWHCMS && $bhasWHMCSDomainAccount)  echo '<tr style="background-color: #FBEEEB;">';
       else if ($iCnt % 2) echo '<tr style="background-color: #dee8f3">';
       else echo "<tr>";
@@ -701,7 +706,7 @@ function plesksync_output($vars){
       echo '&bull; Disk Space: ' . bytesToSize1024($resultNode->data->gen_info->real_size) . '<br />';    
       echo '&bull; Traffic Today: ' . bytesToSize1024($resultNode->data->stat->traffic) . '<br />';
       echo '&bull; Traffic Yesterday: ' . bytesToSize1024($resultNode->data->stat->traffic_prevday) . '<br />';
-      echo '&bull; Service Plan ID: ' . $resultNode->data->subscriptions->subscription->plan->{'plan-guid'} . '<br />';
+      echo '&bull; Service Plan ID: ' . $service_plan_id . '<br />';
       //echo '&bull; Active Domains: '. (string)$resultNode->data->stat->active_domains . '<br />';
       //echo '&bull; Sub-Domains: '. (string)$resultNode->data->stat->subdomains . '<br />';      
       //echo '&bull; Disk Space: ' . bytesToSize1024($resultNode->data->stat->disk_space) . '<br />';     
