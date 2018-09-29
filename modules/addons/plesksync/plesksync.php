@@ -378,11 +378,11 @@ function plesksync_output($vars){
                             break;
                           }
                         }
-                        
+                                                
                         echo '<strong>Choose Package:</strong> <select name="packageid' . $iDomainId . '" id="packageid' . $iDomainId . '" style="font-size:7pt;color:black;">';
-                        // Get list of WHMCS packages
-                        foreach(Capsule::table('tblproducts')->select(array('name','id'))->where('servertype','plesk')->orderBy('name', 'asc')->get() as $product){ 
-                          $prod_selected = ($product->name == $plesk_service_plan)? 'selected="selected" style="color:green;"':'';
+                        // Get list of WHMCS packages (with Plesk, configoption2 is the service plan selected)
+                        foreach(Capsule::table('tblproducts')->select(array('name','id','configoption2'))->where('servertype','plesk')->orderBy('name', 'asc')->get() as $product){ 
+                          $prod_selected = ($product->configoption2 == $plesk_service_plan)? 'selected="selected" style="color:green;"':'';
                           echo "<option value='{$product->id}' $prod_selected>{$product->name}</option>";
                         }
             
