@@ -401,13 +401,12 @@ function plesksync_output($vars){
                 }
                 
                 // No existing customer in WHMCS, so show form to add a new client
-                $strFirst = (string)$userNode[0]->pname;
-                $strFirst = substr($strFirst,0,strpos($strFirst, " ")); 
-                $strLast = (string)$userNode[0]->pname;
-                $strLast = substr($strLast,strpos($strLast, " ")+1,strrpos($strLast, " "));
+                $fullname_parts = explode( " ", (string)$userNode[0]->pname );
+                $strFirst = $fullname_parts[0];
+                $strLast = $fullname_parts[count($fullname_parts)-1]; //eliminates middle names
                 $strPhone = (string)$userNode[0]->phone;
                 if ($strPhone[0] == "1") $strPhone = substr($strPhone, 1); //strip leading 1
-;                
+                
                 echo '<div id="createaccount_output' . $iDomainId . '"><span style="font-size:8pt;color:black"> ';
                 
                 echo 'First: <input type="text" style="font-size:7pt;color:black;"  id="pleskFirst' . $iDomainId  . '" size="21" value="' . ucfirst($strFirst) . '"/>' . ' <br />';
