@@ -13,6 +13,10 @@ shawnreimerdes@users.sourceforge.net
 WebNames.com.br
 http://webnames.com.br
 
+Obsolete
+-----
+IMPORTANT: This module is no longer maintained as WHMCS has a Plesk sync option built in now: https://docs.whmcs.com/Servers#Sync_Accounts
+
 
 About
 -----
